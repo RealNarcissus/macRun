@@ -63,4 +63,4 @@ To explore the systems engineering details, governance rules, and implementation
 
 ## License
 
-Subject to license finalization. Refer to individual source files.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
