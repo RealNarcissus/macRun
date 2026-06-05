@@ -43,3 +43,6 @@ compat-db/reports/local/
 
 # Editor recovery files
 *.recovered
+
+# Agent command files
+.commandcode/
