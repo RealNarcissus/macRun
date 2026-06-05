@@ -26,6 +26,9 @@ Honest status and constraints report:
 - **Explicit Non-Goals**: SwiftUI, Metal, and general AppKit limitations.
 - **Tiers Table**: Comprehensive overview of Tier 0 through Tier 4B.
 
+### 4. **[Project Overview](project_overview.md)**
+The original internal project summary detailing our utility-over-purity philosophy, VM-assisted execution pillars, codebase structure, and early design priorities.
+
 ---
 
 ## Codebase Map
