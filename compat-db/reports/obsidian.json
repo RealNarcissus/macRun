@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.obsidian.md",
+  "bundle_identifier": "md.obsidian",
+  "application_name": "Obsidian",
+  "application_version": "1.5.12",
+  "execution_tier": "native-substitution",
+  "compatibility_state": "functional",
+  "last_updated": "2026-06-05T00:00:00Z",
+  "tested_on": [
+    {
+      "distribution": "Ubuntu",
+      "version": "24.04",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    }
+  ],
+  "known_issues": [
+    {
+      "id": "OBS-001",
+      "severity": "low",
+      "description": "Auto-updater disabled — updates managed by package manager",
+      "affected_subsystem": "Sparkle auto-updater"
+    },
+    {
+      "id": "OBS-002",
+      "severity": "medium",
+      "description": "Darwin-native .node modules (get-fonts, btime) require MACRUN_ALLOW_DARWIN_NATIVE=1 bypass",
+      "affected_subsystem": "Native modules"
+    }
+  ],
+  "workarounds": [
+    {
+      "description": "Use system package manager or download updates manually",
+      "applies_to_issues": ["OBS-001"]
+    },
+    {
+      "description": "Set MACRUN_ALLOW_DARWIN_NATIVE=1 to bypass native module check. Modules are stubbed with recursive Proxy for crash safety.",
+      "applies_to_issues": ["OBS-002"]
+    }
+  ],
+  "degradation": {
+    "category": "unsafe",
+    "confidence": "degraded",
+    "active_shims": ["path-mapper", "shell-integration", "notification-bridge", "clipboard-bridge"],
+    "degraded_capabilities": [],
+    "unsafe_bypasses": ["MACRUN_ALLOW_DARWIN_NATIVE"],
+    "bypassed_modules": ["get-fonts.node", "btime.node"],
+    "recommended_action": "Obsidian runs on Tier 0 with MACRUN_ALLOW_DARWIN_NATIVE=1. Consider Tier 4B VM-assisted execution for full compatibility without unsafe bypasses."
+  },
+  "required_flags": {},
+  "tags": ["electron", "note-taking", "phase-3b"],
+  "notes": "Core workflows (editing, plugins, sync) operate correctly. Requires MACRUN_ALLOW_DARWIN_NATIVE=1 to bypass Darwin-native .node modules (get-fonts, btime). Modules are stubbed with recursive Proxy for crash safety. Auto-updater disabled per stubbing philosophy."
+}

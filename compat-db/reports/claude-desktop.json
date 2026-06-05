@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.anthropic.claude",
+  "bundle_identifier": "com.anthropic.claudefordesktop",
+  "application_name": "Claude Desktop",
+  "application_version": "0.7.0",
+  "execution_tier": "native-substitution",
+  "compatibility_state": "functional",
+  "last_updated": "2026-06-05T00:00:00Z",
+  "tested_on": [
+    {
+      "distribution": "Ubuntu",
+      "version": "24.04",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    }
+  ],
+  "known_issues": [
+    {
+      "id": "CLD-001",
+      "severity": "low",
+      "description": "Auto-updater disabled — updates managed by platform",
+      "affected_subsystem": "Sparkle auto-updater"
+    },
+    {
+      "id": "CLD-002",
+      "severity": "medium",
+      "description": "Keychain access bridged to libsecret — stored credentials may need re-entry on first Linux launch",
+      "affected_subsystem": "Keychain / SecureStorage"
+    }
+  ],
+  "workarounds": [
+    {
+      "description": "Sign in to Claude account on first launch; credentials stored in libsecret",
+      "applies_to_issues": ["CLD-001", "CLD-002"]
+    }
+  ],
+  "degradation": {
+    "category": "shimmed",
+    "confidence": "functional",
+    "active_shims": ["path-mapper", "shell-integration", "notification-bridge", "clipboard-bridge"],
+    "degraded_capabilities": [],
+    "unsafe_bypasses": [],
+    "recommended_action": "None — Tier 0 functional"
+  },
+  "required_flags": {
+    "MACRUN_SHIM_PATHS": "1",
+    "MACRUN_SHIM_CLIPBOARD": "1",
+    "MACRUN_SHIM_NOTIFICATIONS": "1",
+    "MACRUN_SHIM_SHELL": "1",
+    "MACRUN_SHIM_DISABLE_UPDATER": "1"
+  },
+  "tags": ["electron", "ai-tool", "phase-3b"],
+  "notes": "Claude Desktop is an Electron-based AI assistant. Core workflows (chat, file upload, conversation management) operate correctly via runtime substitution. Auto-updater suppressed per stubbing philosophy."
+}

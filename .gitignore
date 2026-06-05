@@ -1,0 +1,42 @@
+# Build artifacts
+build/
+cmake-build-*/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*.cache
+
+# Package management
+node_modules/
+__pycache__/
+*.pyc
+
+# VM images
+*.qcow2
+*.img
+*.vmdk
+*.vdi
+
+# Test output
+tests/artifacts/
+test-results/
+
+# Telemetry / local data
+compat-db/reports/local/

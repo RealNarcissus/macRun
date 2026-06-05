@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.utmapp.UTM",
+  "bundle_identifier": "com.utmapp.UTM",
+  "application_name": "UTM",
+  "application_version": "4.5.3",
+  "execution_tier": "unsupported",
+  "compatibility_state": "unsupported",
+  "last_updated": "2026-06-04T00:00:00Z",
+  "tested_on": [],
+  "known_issues": [
+    {
+      "id": "UTM-001",
+      "severity": "critical",
+      "description": "Hypervisor.framework dependency — no kernel substrate available on Linux host",
+      "affected_subsystem": "hypervisor"
+    },
+    {
+      "id": "UTM-002",
+      "severity": "critical",
+      "description": "Application requires macOS virtualization framework which has no Linux equivalent",
+      "affected_subsystem": "virtualization"
+    }
+  ],
+  "workarounds": [],
+  "required_flags": {},
+  "tags": ["hypervisor", "unsupported", "tier-4"],
+  "notes": "Unsupported per architectural constraints (Invariant 6). Hypervisor.framework requires macOS kernel substrate that does not exist on Linux. No runtime substitution or compatibility layer can address this."
+}

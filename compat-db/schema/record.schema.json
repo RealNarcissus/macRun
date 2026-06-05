@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://macos-runtime-platform/compat-db/record.schema.json",
+  "title": "Compatibility Database Record",
+  "description": "Schema for compatibility records in the macOS Runtime Platform compatibility database. Modeled after ProtonDB and Wine AppDB. Architecture reference: docs/architecture/ARCHITECTURE_V6.md — Compatibility Database section.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_id",
+    "bundle_identifier",
+    "application_name",
+    "execution_tier",
+    "compatibility_state",
+    "last_updated"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version this record conforms to. Enables forward-compatible parsers."
+    },
+    "record_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._-]+$",
+      "description": "Unique record identifier, typically the bundle identifier with optional variant suffix."
+    },
+    "bundle_identifier": {
+      "type": "string",
+      "description": "CFBundleIdentifier from the application's Info.plist. Reverse-DNS format."
+    },
+    "application_name": {
+      "type": "string",
+      "description": "Human-readable application name. Prefer CFBundleDisplayName when available."
+    },
+    "application_version": {
+      "type": "string",
+      "description": "Tested application version (CFBundleShortVersionString or CFBundleVersion)."
+    },
+    "execution_tier": {
+      "type": "string",
+      "enum": [
+        "native-substitution",
+        "darling-compatible",
+        "vm-recommended",
+        "unsupported"
+      ],
+      "description": "Recommended execution tier. Maps to ExecutionTier in platform/common/types.hpp."
+    },
+    "compatibility_state": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "functional",
+        "partial",
+        "degraded",
+        "unsupported",
+        "broken"
+      ],
+      "description": "Compatibility state per architecture spec. Maps to CompatibilityState enum."
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last record modification."
+    },
+    "tested_on": {
+      "type": "array",
+      "description": "Linux distributions and versions this record has been verified against.",
+      "items": {
+        "type": "object",
+        "required": ["distribution", "version"],
+        "properties": {
+          "distribution": { "type": "string", "description": "Linux distribution name (e.g. Ubuntu, Fedora, Arch)." },
+          "version": { "type": "string", "description": "Distribution version string." },
+          "kernel_version": { "type": "string", "description": "Linux kernel version tested with." },
+          "arch": { "type": "string", "enum": ["x86_64", "aarch64"], "description": "Host CPU architecture." }
+        }
+      }
+    },
+    "known_issues": {
+      "type": "array",
+      "description": "Known issues and incompatibilities.",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "description"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique issue identifier within this record." },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "cosmetic"],
+            "description": "Issue severity per CapabilityImpact mapping."
+          },
+          "description": { "type": "string", "description": "Human-readable issue description." },
+          "affected_subsystem": { "type": "string", "description": "Subsystem affected (e.g. rendering, clipboard, filesystem)." },
+          "reproduction_steps": { "type": "string", "description": "Steps to reproduce the issue." },
+          "resolved_in_version": { "type": "string", "description": "Platform version where this issue was resolved, if fixed." }
+        }
+      }
+    },
+    "workarounds": {
+      "type": "array",
+      "description": "Known workarounds for issues.",
+      "items": {
+        "type": "object",
+        "required": ["description"],
+        "properties": {
+          "description": { "type": "string" },
+          "applies_to_issues": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "IDs of known_issues this workaround addresses."
+          },
+          "requires_flags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Launch flags required for this workaround."
+          }
+        }
+      }
+    },
+    "required_flags": {
+      "type": "object",
+      "description": "Key-value pairs of launch flags required for this application.",
+      "additionalProperties": { "type": "string" }
+    },
+    "macos_guest_requirements": {
+      "type": "object",
+      "description": "macOS VM requirements if Tier 4B execution is needed.",
+      "properties": {
+        "minimum_macos_version": { "type": "string", "description": "Minimum macOS version required (e.g. 13.0)." },
+        "recommended_macos_version": { "type": "string" },
+        "minimum_ram_mb": { "type": "integer", "minimum": 2048 },
+        "minimum_disk_gb": { "type": "integer", "minimum": 10 },
+        "requires_metal": { "type": "boolean", "description": "Whether Metal GPU support is required in the guest." },
+        "requires_accessibility": { "type": "boolean", "description": "Whether Accessibility API access is required." },
+        "special_configuration": { "type": "string", "description": "Any special VM configuration notes." }
+      }
+    },
+    "performance_characteristics": {
+      "type": "object",
+      "description": "Observed performance characteristics.",
+      "properties": {
+        "startup_time_ms": { "type": "integer", "description": "Approximate cold-start time in milliseconds." },
+        "memory_usage_mb": { "type": "integer", "description": "Typical resident memory usage in MB." },
+        "cpu_overhead": {
+          "type": "string",
+          "enum": ["negligible", "low", "moderate", "high", "extreme"],
+          "description": "CPU translation overhead for non-native binaries."
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "capability_requirements": {
+      "type": "object",
+      "description": "Detected capability requirements from the Capability Detection Engine.",
+      "properties": {
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["framework", "impact"],
+            "properties": {
+              "framework": { "type": "string" },
+              "impact": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+              "detected": { "type": "boolean" }
+            }
+          }
+        },
+        "architecture": { "type": "string", "enum": ["x86_64", "arm64", "universal", "unknown"] },
+        "risk_score_total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "contributor": {
+      "type": "object",
+      "description": "Record contribution metadata.",
+      "properties": {
+        "name": { "type": "string" },
+        "contact": { "type": "string" },
+        "verification_method": { "type": "string", "enum": ["manual", "automated", "user-report", "developer"] }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form notes, caveats, or additional context."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Searchable tags for categorization (e.g. electron, cocoa, cli, game, ai-tool)."
+    },
+    "degradation": {
+      "type": "object",
+      "description": "Degradation metadata per DEGRADATION_MODEL.md.",
+      "required": ["category"],
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["none", "transparent", "shimmed", "functional", "cosmetic", "unsafe", "experimental", "hard_failure"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["verified", "functional", "degraded", "experimental", "unsupported"]
+        },
+        "active_shims": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "degraded_capabilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "unsafe_bypasses": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "bypassed_modules": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recommended_action": {
+          "type": "string"
+        },
+        "experimental_features": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

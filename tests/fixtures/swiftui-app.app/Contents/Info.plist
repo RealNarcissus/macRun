@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>Raycast</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.raycast.macos</string>
+	<key>CFBundleName</key>
+	<string>Raycast</string>
+	<key>CFBundleDisplayName</key>
+	<string>Raycast</string>
+	<key>CFBundleVersion</key>
+	<string>1.90.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.90</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>DTSDKName</key>
+	<string>macosx14.0</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>LSBackgroundOnly</key>
+	<false/>
+</dict>
+</plist>

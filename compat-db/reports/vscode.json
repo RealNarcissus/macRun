@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.microsoft.VSCode",
+  "bundle_identifier": "com.microsoft.VSCode",
+  "application_name": "Visual Studio Code",
+  "application_version": "1.90.0",
+  "execution_tier": "native-substitution",
+  "compatibility_state": "degraded",
+  "last_updated": "2026-06-04T00:00:00Z",
+  "tested_on": [
+    {
+      "distribution": "Ubuntu",
+      "version": "24.04",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    }
+  ],
+  "known_issues": [
+    {
+      "id": "VSC-001",
+      "severity": "high",
+      "description": "Integrated terminal uses xterm.js but platform pty bridge is incomplete",
+      "affected_subsystem": "terminal",
+      "reproduction_steps": "Open View → Terminal. Shell spawns but PTY events may lag."
+    },
+    {
+      "id": "VSC-002",
+      "severity": "medium",
+      "description": "Extension host may fail for macOS-specific extensions",
+      "affected_subsystem": "extensions"
+    },
+    {
+      "id": "VSC-003",
+      "severity": "low",
+      "description": "Keychain integration mapped to libsecret — some credentials may need re-entry",
+      "affected_subsystem": "credentials"
+    }
+  ],
+  "workarounds": [
+    {
+      "description": "Use an external terminal emulator for heavy terminal workloads",
+      "applies_to_issues": ["VSC-001"]
+    },
+    {
+      "description": "Install Linux-native extensions where available",
+      "applies_to_issues": ["VSC-002"]
+    }
+  ],
+  "required_flags": {
+    "DISABLE_GPU": "1",
+    "ELECTRON_RUNTIME": "28"
+  },
+  "tags": ["electron", "editor", "degraded", "phase-1"],
+  "notes": "Major features (editor, search, git, debugging) functional. Integrated terminal and keychain integration are degraded. App remains usable for primary editing workflows."
+}

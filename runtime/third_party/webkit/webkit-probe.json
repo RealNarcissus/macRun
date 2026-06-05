@@ -1,0 +1,8 @@
+{
+  "substrate": "webkitgtk",
+  "min_version": "2.40.0",
+  "status": "available",
+  "details": "pkg-config",
+  "probed_at": "2026-06-04T12:44:46Z",
+  "host_distribution": ""EndeavourOS Linux""
+}

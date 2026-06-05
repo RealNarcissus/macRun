@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.apple.FinalCutPro",
+  "bundle_identifier": "com.apple.FinalCutPro",
+  "application_name": "Final Cut Pro",
+  "application_version": "10.7",
+  "execution_tier": "unsupported",
+  "compatibility_state": "broken",
+  "last_updated": "2026-06-04T00:00:00Z",
+  "tested_on": [
+    {
+      "distribution": "Ubuntu",
+      "version": "24.04",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    }
+  ],
+  "known_issues": [
+    {
+      "id": "FCP-001",
+      "severity": "critical",
+      "description": "Metal-dependent rendering pipeline crashes immediately on non-Metal hosts",
+      "affected_subsystem": "rendering",
+      "reproduction_steps": "Launch application. Crashes within 2 seconds with Metal initialization failure."
+    },
+    {
+      "id": "FCP-002",
+      "severity": "critical",
+      "description": "AVFoundation media pipeline unavailable — no video decode/encode",
+      "affected_subsystem": "media"
+    },
+    {
+      "id": "FCP-003",
+      "severity": "high",
+      "description": "Requires Apple-specific media codecs unavailable on Linux",
+      "affected_subsystem": "codecs"
+    }
+  ],
+  "workarounds": [],
+  "required_flags": {},
+  "tags": ["pro-app", "broken", "metal", "media-production"],
+  "notes": "Unexpected failure/regression. Application requires Metal GPU support and Apple-specific media framework infrastructure that is fundamentally incompatible with the current platform. Marked broken rather than unsupported because the failure is at runtime rather than architectural classification."
+}

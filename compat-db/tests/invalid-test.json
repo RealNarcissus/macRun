@@ -1,0 +1,18 @@
+{
+  "schema_version": "not-a-version",
+  "record_id": "",
+  "bundle_identifier": "",
+  "application_name": "",
+  "execution_tier": "invalid-tier",
+  "compatibility_state": "verified",
+  "last_updated": "2026-06-04T00:00:00Z",
+  "known_issues": [
+    {
+      "id": "",
+      "severity": "critical",
+      "description": ""
+    }
+  ],
+  "tags": [],
+  "notes": "This record deliberately violates the schema to test validation."
+}

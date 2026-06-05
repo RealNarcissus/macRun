@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Electron runtime version mapping for macOS → Linux runtime substitution",
+  "architecture_reference": "docs/architecture/SUBSTRATE_MODEL.md Section 3 (Electron Runtimes)",
+  "pinned_versions": {
+    "22.x": {
+      "exact": "22.3.27",
+      "status": "supported",
+      "macos_equivalent": "Electron 22",
+      "cache_path": "~/.cache/macrun/electron/electron-22.3.27"
+    },
+    "24.x": {
+      "exact": "24.8.8",
+      "status": "supported",
+      "macos_equivalent": "Electron 24",
+      "cache_path": "~/.cache/macrun/electron/electron-24.8.8"
+    },
+    "28.x": {
+      "exact": "28.3.3",
+      "status": "recommended",
+      "macos_equivalent": "Electron 28",
+      "cache_path": "~/.cache/macrun/electron/electron-28.3.3"
+    }
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "verification": "on-acquire",
+    "cache_max_age_days": 90
+  },
+  "discovery_contract": {
+    "lookup_key": "CFBundleIdentifier",
+    "version_detection": "Electron Framework.framework version string",
+    "fallback": "latest-compatible-cached"
+  }
+}

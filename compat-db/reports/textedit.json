@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.apple.TextEdit",
+  "bundle_identifier": "com.apple.TextEdit",
+  "application_name": "TextEdit",
+  "application_version": "1.16",
+  "execution_tier": "darling-compatible",
+  "compatibility_state": "partial",
+  "last_updated": "2026-06-04T00:00:00Z",
+  "tested_on": [
+    {
+      "distribution": "Ubuntu",
+      "version": "24.04",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    }
+  ],
+  "known_issues": [
+    {
+      "id": "TE-001",
+      "severity": "high",
+      "description": "CoreAnimation-backed text rendering degraded — animations flattened",
+      "affected_subsystem": "rendering",
+      "workaround": "Display quality acceptable for editing but animations are disabled"
+    },
+    {
+      "id": "TE-002",
+      "severity": "medium",
+      "description": "Font panel may not display system-installed fonts",
+      "affected_subsystem": "text"
+    }
+  ],
+  "workarounds": [
+    {
+      "description": "Use File → Open with explicit encoding if document fails to load",
+      "applies_to_issues": []
+    },
+    {
+      "description": "Font panel limited — use system font configuration instead",
+      "applies_to_issues": ["TE-002"]
+    }
+  ],
+  "required_flags": {},
+  "tags": ["cocoa", "phase-3", "appkit", "editor"],
+  "notes": "Launch successful. Core editing and saving functional. Rich text rendering functional but animations are disabled per CoreAnimation flattening strategy. App launches but some subsystems unavailable (partial state)."
+}

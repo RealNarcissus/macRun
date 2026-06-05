@@ -1,0 +1,20 @@
+# architecture
+- Electron API normalization must be registry-owned: all patches registered in a centralized registry with version scope, risk class (A/B/C), and degradation category — no ad-hoc mutations outside the registry. Confidence: 0.80
+- Every API normalization activation must produce structured [MACRUN:NORMALIZATION] diagnostics with class, API target, version, and degradation category — normalization must never be silent. Confidence: 0.80
+- Health checks must fail explicitly (healthy=false) for missing/unacquired substrates — never return healthy=true with empty paths. Confidence: 0.85
+- Enforce SHA256 checksum verification for all downloaded artifacts in acquisition scripts; fail immediately on mismatch. Confidence: 0.85
+- Do not compile third-party dependencies dynamically during acquisition — use verified pre-built static binaries. If build-from-source is needed, isolate behind a distinct --build parameter. Confidence: 0.85
+- Production adapter code must use real system probes (binary path checks, /dev/kvm existence, cache validation), not mock defaults set to true. Confidence: 0.85
+- Resolve file paths dynamically (via MACRUN_PREFIX env var or relative to executable path), never assume execution from workspace root. Confidence: 0.85
+- Teardown must send SIGTERM/SIGKILL to registered child processes, not just mutate state variables. Confidence: 0.80
+- Never shell out via popen with unsanitized strings — use fork+execvp with argument arrays to avoid command injection. Confidence: 0.85
+- Never call setenv in the parent/orchestrator process — construct envp arrays and pass via execve/execvpe to isolate environment to the child process only. Confidence: 0.85
+- Process termination must escalate: SIGTERM with timeout, then SIGKILL with kill(-pgid, SIGKILL) to clean all nested child processes and prevent zombie leaks. Confidence: 0.85
+- Quote Exec values in XDG .desktop files to handle paths containing spaces (e.g., Exec=macrun-cli --launch "/path/with spaces/App.app"). Confidence: 0.85
+- Use type-safe configuration (structs, maps, enums) for feature toggles instead of brittle substring matching on filenames or paths. Confidence: 0.80
+- Monkey-patched process.dlopen must return undefined (conforming to Node's dlopen interface), never return the module object, to prevent downstream TypeError crashes. Confidence: 0.80
+- Unsafe or experimental compatibility modes (e.g., MACRUN_ALLOW_DARWIN_NATIVE) must require explicit opt-in via environment variable; never auto-enable degraded execution paths. Confidence: 0.85
+- Degradation logic remains adapter-owned; orchestration must stay compatibility-policy agnostic — never encode app-specific or degradation-specific logic in the orchestration layer. Confidence: 0.85
+- Author architecture design documents before implementing governance-sensitive features; use docs/architecture/ as the source of truth for design rationale before code. Confidence: 0.80
+- Observability instrumentation must be strictly read-only: capture and report diagnostics without mutating runtime semantics, IPC behavior, preload execution, or application state. Confidence: 0.85
+- All diagnostics must be deterministic — use explicit categorization (not heuristics), structured event formats, and process-attributed logging; never rely on probabilistic or timing-dependent classification. Confidence: 0.80

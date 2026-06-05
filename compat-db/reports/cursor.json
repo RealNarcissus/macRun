@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.cursor.app",
+  "bundle_identifier": "com.cursor.app",
+  "application_name": "Cursor",
+  "application_version": "0.42.0",
+  "execution_tier": "native-substitution",
+  "compatibility_state": "verified",
+  "last_updated": "2026-06-04T00:00:00Z",
+  "tested_on": [
+    {
+      "distribution": "Ubuntu",
+      "version": "24.04",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    },
+    {
+      "distribution": "Fedora",
+      "version": "40",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    }
+  ],
+  "known_issues": [],
+  "workarounds": [],
+  "required_flags": {},
+  "tags": ["electron", "ai-tool", "editor", "phase-1"],
+  "notes": "Runs natively via Electron runtime substitution (Tier 0). Settings persist correctly. Clipboard and Wayland integration functional. No VM required."
+}
