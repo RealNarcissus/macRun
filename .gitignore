@@ -40,3 +40,6 @@ test-results/
 
 # Telemetry / local data
 compat-db/reports/local/
+
+# Editor recovery files
+*.recovered
