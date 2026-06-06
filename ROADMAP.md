@@ -28,7 +28,7 @@ Development priorities are governed by the following rules:
 
 # Phase 0 — Architecture and Infrastructure
 
-Status: In Progress
+Status: Complete
 
 Objectives:
 
@@ -58,6 +58,7 @@ Exit Criteria:
 # Phase 1 — Runtime Substitution Layer
 
 Priority: Highest
+Status: In Progress — Advanced Compatibility Engineering
 
 Goal:
 Run modern Electron/Tauri desktop applications with Linux-native UX.
@@ -70,25 +71,45 @@ Focus Areas:
 * Tauri frontend execution
 * application launcher (`macrun`)
 * compatibility database infrastructure
+* Electron API normalization (governed, registry-based)
+* native module compilation (SQLite, logging)
+* external process substitution (CLI backends)
+* runtime substrate negotiation (multi-version Electron)
+
+Discovered Application Compatibility Spectrum:
+
+* Class A: Self-Contained (Obsidian) — proxy stubbing sufficient
+* Class B: API Drift (Claude Desktop) — governed normalization required
+* Class C: IDE-Class (Cursor) — native module compilation required
+* Class D: Client-Server (Codex) — process substitution + substrate negotiation required
+
+See: docs/architecture/COMPATIBILITY_SPECTRUM.md
 
 Target Applications:
 
-* Cursor
-* Claude Desktop
-* Windsurf
-* VS Code derivatives
-* Obsidian
+* Obsidian — Class A — Functional
+* Claude Desktop — Class B — Functional
+* Cursor — Class C — Functional
+* Codex Desktop — Class D — Functional (rendering issues, substrate drift)
+* Windsurf — Class C/D — Untested
+* VS Code derivatives — Class C — Untested
 
 Expected Outcome:
 Linux users can run major AI/developer desktop applications without perceiving emulation.
 
+Current Experimental Direction:
+
+* Re-test Codex under Electron 41 runtime substrate to validate runtime negotiation hypothesis
+* See: docs/architecture/RUNTIME_NEGOTIATION.md
+
 Exit Criteria:
 
-* applications launch reliably
+* applications launch reliably across all four architecture classes
 * filesystem integration works
 * clipboard and notifications function
 * settings persist correctly
 * launch stability acceptable
+* runtime substrate negotiation validated for at least one Class D application
 
 ---
 
@@ -234,6 +255,17 @@ The system prioritizes:
 * explicit compatibility reporting,
 * diagnosability,
 * and stable user workflows.
+
+The compatibility problem is no longer "can Electron apps launch?"
+That problem is solved.
+
+The current problem is:
+* compatibility-directed runtime orchestration across four architecture classes.
+
+See:
+* docs/architecture/COMPATIBILITY_SPECTRUM.md — Application classification
+* docs/architecture/RUNTIME_NEGOTIATION.md — Substrate selection governance
+* docs/architecture/DEGRADATION_MODEL.md — Degradation categories and escalation
 
 ---
 

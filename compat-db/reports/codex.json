@@ -5,8 +5,9 @@
   "application_name": "Codex",
   "application_version": "3593",
   "execution_tier": "native-substitution",
-  "compatibility_state": "verified",
-  "last_updated": "2026-06-06T15:25:00Z",
+  "compatibility_state": "functional",
+  "architecture_class": "class_d_client_server",
+  "last_updated": "2026-06-06T16:30:00Z",
   "tested_on": [
     {
       "distribution": "Ubuntu",
@@ -15,9 +16,52 @@
       "arch": "x86_64"
     }
   ],
-  "known_issues": [],
-  "workarounds": [],
+  "known_issues": [
+    {
+      "id": "codex-rendering-corruption",
+      "severity": "medium",
+      "description": "Rendering layout anomalies. Suspected runtime substrate drift: app built against Electron 32-41, substituted with Electron 28.3.3. Compositor and BrowserView semantics mismatch likely.",
+      "affected_subsystem": "renderer_compositor"
+    },
+    {
+      "id": "codex-rebranded-framework",
+      "severity": "low",
+      "description": "Uses custom-named 'Codex Framework.framework' instead of standard 'Electron Framework.framework'. Requires ElectronAsarIntegrity plist detection and compat-db override for Electron tier recognition.",
+      "affected_subsystem": "detector"
+    }
+  ],
+  "workarounds": [
+    {
+      "description": "Substitute Linux-native Codex CLI backend via CODEX_CLI_PATH environment variable. Required because bundled CLI is macOS arm64 Mach-O.",
+      "applies_to_issues": [],
+      "requires_flags": {
+        "CODEX_CLI_PATH": "/path/to/linux-native/codex"
+      }
+    }
+  ],
+  "external_processes": [
+    {
+      "name": "codex-cli",
+      "type": "backend-server",
+      "protocol": "stdio-mcp",
+      "binary_type": "mach-o-arm64",
+      "substitution_env": "CODEX_CLI_PATH"
+    }
+  ],
+  "critical_native_modules": [
+    {
+      "module": "better-sqlite3",
+      "role": "state-database",
+      "requires_compilation": true
+    }
+  ],
+  "runtime_policy": {
+    "preferred": ["41", "38", "32"],
+    "minimum": "30",
+    "validated": [],
+    "fallback": ["28"]
+  },
   "required_flags": {},
-  "tags": ["electron", "ai-tool", "editor"],
-  "notes": "Runs natively via Electron runtime substitution (Tier 0) using dynamic database tier overrides."
+  "tags": ["electron", "ai-tool", "editor", "client-server", "rebranded-framework"],
+  "notes": "Launches and renders via Electron 28 runtime substitution with rendering anomalies. Rebranded Electron framework requires detection overrides. CLI backend requires Linux-native binary substitution. Rendering issues likely resolvable via Electron 41 substrate (see RUNTIME_NEGOTIATION.md)."
 }

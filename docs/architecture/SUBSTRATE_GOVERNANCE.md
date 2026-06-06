@@ -9,7 +9,7 @@ Architecture reference: docs/architecture/SUBSTRATE_MODEL.md Sections 7-9
 | Darling | Forked | Custom `c3e5d0a` fork | Pinned commit hash |
 | QEMU (user-mode) | System dependency / Pre-built binary | Upstream 8.2.0 static | Pinned release tag, pre-built binary preferred |
 | QEMU (system VM) | System dependency / Pre-built binary | Upstream 9.0.0 | Pinned release tag |
-| Electron runtimes | Externally managed | Upstream Linux Electron releases | Pinned matrix: 22.x, 24.x, 28.x |
+| Electron runtimes | Externally managed | Upstream Linux Electron releases | Pinned matrix: 22.x, 24.x, 28.x (stable), 32.x, 38.x, 41.x (planned — see RUNTIME_NEGOTIATION.md) |
 | WebKitGTK | System dependency | Host package manager | Minimum 2.40.0 |
 | Cairo | System dependency | Host package manager | System-provided |
 | libarchive | System dependency | Host package manager | System-provided |
@@ -45,6 +45,14 @@ Per SUBSTRATE_MODEL.md Section 7:
 - **Rolling updates**: Prohibited. All foundational runtimes are pinned.
 - **Patch policy**: Security patches may be fast-tracked. Feature upgrades follow the bi-monthly cycle.
 - **Replacement feasibility**: Each substrate has documented replacement candidates (see Section 3-4 of SUBSTRATE_MODEL.md).
+
+## Runtime Negotiation
+
+Per [RUNTIME_NEGOTIATION.md](RUNTIME_NEGOTIATION.md):
+
+- Electron runtime selection is a governed orchestration problem, not a static default.
+- The runtime matrix will expand beyond the initial 22.x/24.x/28.x to support IDE-class and Client-Server class applications.
+- See RUNTIME_NEGOTIATION.md for the full negotiation algorithm, selection invariants, and prohibited behaviors.
 
 ## Directory Layout
 

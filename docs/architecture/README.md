@@ -26,6 +26,12 @@ Defines the renderer semantic observability infrastructure: diagnostic shims (`r
 ### ELECTRON_API_NORMALIZATION.md
 Governs all Electron API normalization behavior. Defines 4 risk classes (Class A: Cosmetic No-Op through Class D: Forbidden), the centralized normalization registry structure, version-scoping rules, diagnostic format `[MACRUN:NORMALIZATION]`, degradation integration, and the procedure for adding new governed normalizations. Authoritative for all Electron API patches.
 
+### COMPATIBILITY_SPECTRUM.md
+Codifies the empirically discovered Electron application compatibility spectrum across four architecture classes: Class A (Self-Contained), Class B (API Drift), Class C (IDE-Class), and Class D (Client-Server). Defines the classification decision matrix, detection pipeline integration, and compat-db metadata extensions. Authoritative for all application classification decisions.
+
+### RUNTIME_NEGOTIATION.md
+Formalizes the governance of Electron runtime version selection and substrate negotiation. Defines the multi-version runtime matrix, the negotiation algorithm, selection invariants, and the new `[MACRUN:SUBSTRATE]` diagnostic domain. Documents the renderer layout and compositor diagnostics frontier. Authoritative for all Electron runtime substrate selection decisions.
+
 ## Future Documents
-- ADRs (Architecture Decision Records) in [adr/](file:///home/charleton/Desktop/agentProjects/Codex/MacOS%20Emulator/docs/architecture/adr/)
-- Per-subsystem design docs in [docs/design/](file:///home/charleton/Desktop/agentProjects/Codex/MacOS%20Emulator/docs/design/)
+- ADRs (Architecture Decision Records) in [adr/](file:///home/charleton/Desktop/agentProjects/Codex/macRun/docs/architecture/adr/)
+- Per-subsystem design docs in [docs/design/](file:///home/charleton/Desktop/agentProjects/Codex/macRun/docs/design/)
