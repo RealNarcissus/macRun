@@ -172,6 +172,10 @@ BundleInfo analyze_bundle(const std::string& app_bundle_path) {
     std::string data = read_file(plist_path);
     if (data.empty()) return info;
 
+    if (data.find("ElectronAsarIntegrity") != std::string::npos) {
+        info.custom_properties["ElectronAsarIntegrity"] = "present";
+    }
+
     if (is_binary_plist(data)) {
         // Binary plist: best-effort key extraction from embedded ASCII strings.
         // The extracted values may be incomplete compared to a full property list parser.

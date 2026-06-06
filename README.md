@@ -64,14 +64,34 @@ cmake --build build
 ./runtime/shims/install.sh
 ```
 
-### 2. Launch macOS Apps
-Launch the extracted macOS `.app` bundle using the `macRun` orchestrator:
+### 2. Prepare & Launch macOS Apps
+
+To run a macOS application natively on Linux under `macRun`, follow this step-by-step workflow:
+
+#### Step A: Extract the App Bundle
+If you have a macOS disk image (`.dmg`), extract the `.app` bundle using `7z`:
+```bash
+7z x /path/to/Application.dmg -o/tmp/extracted-app/
+```
+
+#### Step B: Classify the Application
+Run capability detection on the extracted `.app` bundle to verify the execution tier classification and compatibility plan:
+```bash
+./build/tooling/macrun-cli/macrun-cli --plan-only "/tmp/extracted-app/Application.app"
+```
+
+#### Step C: Resolve Native Modules & Helpers
+* **Darwin-Native Node Modules (`.node`)**: macOS Electron apps often compile binary bindings for macOS. Run with the bypass variable `MACRUN_ALLOW_DARWIN_NATIVE=1` to allow execution with dynamic runtime Proxy stubbing. For modules essential to local state storage (e.g. `@vscode/sqlite3` in Cursor or `better-sqlite3` in Codex), compile the native module on Linux targeting Electron `28.3.3` (using `@electron/rebuild`) and substitute it inside the app's `node_modules`.
+* **Helper CLI Binaries**: If the application spawns a bundled macOS command-line executable (e.g. Codex's stdio app-server helper), you must locate or compile a Linux-native ELF version of that binary and set the application-specific path environment variable (e.g. `CODEX_CLI_PATH`).
+
+#### Step D: Launch the Application
+Run the launcher tool pointing to the extracted `.app` path with the required environment configurations:
 
 * **Obsidian**:
   ```bash
   MACRUN_ALLOW_DARWIN_NATIVE=1 \
   NODE_PATH=~/.local/npm-global/lib/node_modules \
-  ./build/tooling/macrun-cli/macrun-cli --launch "/path/to/Obsidian.app"
+  ./build/tooling/macrun-cli/macrun-cli --launch "/tmp/obsidian-run/Obsidian.app"
   ```
 
 * **Claude Desktop**:
@@ -79,7 +99,7 @@ Launch the extracted macOS `.app` bundle using the `macRun` orchestrator:
   MACRUN_ALLOW_DARWIN_NATIVE=1 \
   NODE_PATH=~/.local/npm-global/lib/node_modules \
   MACRUN_DIAG_RENDERER=1 MACRUN_DIAG_MAIN=1 \
-  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/path/to/Claude.app"
+  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/tmp/claude-run/Claude/Claude.app"
   ```
 
 * **Cursor**:
@@ -87,8 +107,18 @@ Launch the extracted macOS `.app` bundle using the `macRun` orchestrator:
   MACRUN_ALLOW_DARWIN_NATIVE=1 \
   NODE_PATH=~/.local/npm-global/lib/node_modules \
   MACRUN_DIAG_RENDERER=1 MACRUN_DIAG_MAIN=1 \
-  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/path/to/Cursor.app"
+  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/tmp/cursor-run/Cursor.app"
   ```
+
+* **Codex**:
+  ```bash
+  CODEX_CLI_PATH="/home/charleton/.local/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex" \
+  NODE_PATH=~/.local/npm-global/lib/node_modules \
+  MACRUN_ALLOW_DARWIN_NATIVE=1 \
+  MACRUN_DIAG_RENDERER=1 MACRUN_DIAG_MAIN=1 \
+  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/tmp/codex-run/Codex Installer/Codex.app"
+  ```
+
 
 ---
 

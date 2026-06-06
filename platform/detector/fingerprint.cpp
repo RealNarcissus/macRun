@@ -38,6 +38,7 @@ FingerprintRegistry::FingerprintRegistry() {
             if (has_lib(m, "Electron Framework.framework")) return true;
             if (has_rpath(m, "Electron Framework")) return true;
             if (bid_contains(b, "com.github.Electron")) return true;
+            if (b.custom_properties.count("ElectronAsarIntegrity") > 0) return true;
             return false;
         }),
         EvidenceFn([](const BundleInfo& b, const MachOInfo& m, const EntitlementInfo&) -> std::string {
@@ -45,6 +46,8 @@ FingerprintRegistry::FingerprintRegistry() {
                 return "Linked against Electron Framework.framework";
             if (has_rpath(m, "Electron Framework"))
                 return "RPATH references Electron Framework";
+            if (b.custom_properties.count("ElectronAsarIntegrity") > 0)
+                return "Info.plist contains ElectronAsarIntegrity";
             return "Bundle identifier matches Electron pattern";
         })
     );

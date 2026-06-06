@@ -136,6 +136,44 @@ OrchestrationResult orchestrate(const std::string& input_path) {
                 for (const auto& wa : matches[0].record.workarounds) {
                     result.plan.compatibility.workarounds.push_back(wa.description);
                 }
+
+                // Override execution tier and compatibility state based on compat-db profile
+                switch (matches[0].record.execution_tier) {
+                    case compatdb::ExecutionTier::NativeSubstitution:
+                        result.plan.detection.recommendation.preferred_tier = platform::ExecutionTier::Tier0_NativeSubstitution;
+                        break;
+                    case compatdb::ExecutionTier::DarlingCompatible:
+                        result.plan.detection.recommendation.preferred_tier = platform::ExecutionTier::Tier2_LightweightCocoa;
+                        break;
+                    case compatdb::ExecutionTier::VMRecommended:
+                        result.plan.detection.recommendation.preferred_tier = platform::ExecutionTier::Tier4B_VMAssisted;
+                        break;
+                    case compatdb::ExecutionTier::Unsupported:
+                        result.plan.detection.recommendation.preferred_tier = platform::ExecutionTier::Tier4_Unsupported;
+                        break;
+                }
+
+                switch (matches[0].record.compatibility_state) {
+                    case compatdb::CompatibilityState::Verified:
+                        result.plan.detection.compatibility_state = platform::CompatibilityState::Verified;
+                        break;
+                    case compatdb::CompatibilityState::Functional:
+                        result.plan.detection.compatibility_state = platform::CompatibilityState::Functional;
+                        break;
+                    case compatdb::CompatibilityState::Partial:
+                        result.plan.detection.compatibility_state = platform::CompatibilityState::Partial;
+                        break;
+                    case compatdb::CompatibilityState::Degraded:
+                        result.plan.detection.compatibility_state = platform::CompatibilityState::Degraded;
+                        break;
+                    case compatdb::CompatibilityState::Unsupported:
+                        result.plan.detection.compatibility_state = platform::CompatibilityState::Unsupported;
+                        break;
+                    case compatdb::CompatibilityState::Broken:
+                        result.plan.detection.compatibility_state = platform::CompatibilityState::Broken;
+                        break;
+                }
+
                 diag(result.plan, "compat-db",
                     "matched_record=" + matches[0].record.record_id +
                     " state=" + std::string(compatdb::state_to_string(matches[0].record.compatibility_state)));
