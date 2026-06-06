@@ -38,6 +38,9 @@ We have proven the hybrid runtime substitution architecture using production-gra
 * **Claude Desktop**: Resolves Electron version-specific API drift using our governed normalization registry.
 * **Codex Desktop**: Executes dynamically under negotiated Electron `v42.3.3` with solid background styling and full UI hydration, integrating its local Rust backend CLI and native SQLite state databases on Linux.
 
+### Claude Desktop Running on Linux (Electron 42 Substrate)
+![Claude Desktop on Linux](docs/guides/claude/images/claude_linux.png)
+
 ### Codex Desktop Running on Linux (EndeavourOS / Wayland)
 ![Codex Desktop on Linux](docs/guides/codex/images/codex_linux.png)
 
