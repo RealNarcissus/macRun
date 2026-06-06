@@ -32,10 +32,18 @@ Rather than trying to build a monolithic macOS emulator or fully reimplementing 
 
 ## Validation Proofs
 
-We have proven the hybrid runtime substitution architecture using **Claude Desktop** and **Obsidian** (which contain preload isolation, native module assumptions, and complex multi-process IPC startup). By decoupling the HTML/renderer assets from the macOS Electron runtime and substituting a normalized Linux Electron environment with governed shims, we achieve:
-- Deterministic Electron runtime substitution.
-- Structured, transparent compatibility degradation.
-- Decoupled, adapterized orchestration boundaries.
+We have proven the hybrid runtime substitution architecture using production-grade applications containing native module dependencies, multi-process IPC startup, and platform-specific rendering behaviors:
+
+* **Obsidian**: Runs fully self-contained using runtime normalizations.
+* **Claude Desktop**: Resolves Electron version-specific API drift using our governed normalization registry.
+* **Codex Desktop**: Executes dynamically under negotiated Electron `v42.3.3` with solid background styling and full UI hydration, integrating its local Rust backend CLI and native SQLite state databases on Linux.
+
+### Codex Desktop on Linux (Light Mode & Dark Mode)
+| Light Mode | Dark Mode |
+|---|---|
+| ![Codex Light Mode](docs/guides/codex/images/codex_light.png) | ![Codex Dark Mode](docs/guides/codex/images/codex_dark.png) |
+
+For a detailed step-by-step walkthrough on preparing, compiling dependencies, and launching Codex, see the **[Codex Desktop Launch Guide](docs/guides/codex/README.md)**.
 
 ---
 
@@ -111,13 +119,13 @@ Run the launcher tool pointing to the extracted `.app` path with the required en
   ```
 
 * **Codex**:
+  Refer to the comprehensive step-by-step **[Codex Desktop Launch Guide](docs/guides/codex/README.md)** for instructions on building the native SQLite module, mapping the Rust backend CLI, and launching:
   ```bash
-  CODEX_CLI_PATH="/home/charleton/.local/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex" \
-  NODE_PATH=~/.local/npm-global/lib/node_modules \
+  CODEX_CLI_PATH="/path/to/linux-native/codex" \
   MACRUN_ALLOW_DARWIN_NATIVE=1 \
-  MACRUN_DIAG_RENDERER=1 MACRUN_DIAG_MAIN=1 \
-  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/tmp/codex-run/Codex Installer/Codex.app"
+  ./build/tooling/macrun-cli/macrun-cli --launch "/tmp/codex-run/Codex Installer/Codex.app"
   ```
+
 
 
 ---
