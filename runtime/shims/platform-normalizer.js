@@ -130,7 +130,7 @@
         var origDlopen = process.dlopen;
         process.dlopen = function (module, filename, flags) {
             try {
-                return origDlopen.call(this, module, filename, flags);
+                return origDlopen.apply(this, arguments);
             } catch (e) {
                 console.warn('[macrun-shim] Failed to load native module:', filename, '; Stubbing with a recursive Proxy to prevent crash. Error:', e.message);
                 

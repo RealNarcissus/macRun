@@ -710,7 +710,7 @@ bool ElectronAdapter::execute() {
                       << "  const origDlopen = process.dlopen;\n"
                       << "  process.dlopen = function (module, filename, flags) {\n"
                       << "    try {\n"
-                      << "      return origDlopen.call(this, module, filename, flags);\n"
+                      << "      return origDlopen.apply(this, arguments);\n"
                       << "    } catch (e) {\n"
                       << "      console.warn('[macrun-shim] Failed to load native module:', filename, '; Stubbing with a recursive Proxy. Error:', e.message);\n"
                       << "      const makeProxyStub = function () {\n"
