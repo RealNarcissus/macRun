@@ -38,10 +38,8 @@ We have proven the hybrid runtime substitution architecture using production-gra
 * **Claude Desktop**: Resolves Electron version-specific API drift using our governed normalization registry.
 * **Codex Desktop**: Executes dynamically under negotiated Electron `v42.3.3` with solid background styling and full UI hydration, integrating its local Rust backend CLI and native SQLite state databases on Linux.
 
-### Codex Desktop on Linux (Light Mode & Dark Mode)
-| Light Mode | Dark Mode |
-|---|---|
-| ![Codex Light Mode](docs/guides/codex/images/codex_light.png) | ![Codex Dark Mode](docs/guides/codex/images/codex_dark.png) |
+### Codex Desktop Running on Linux (EndeavourOS / Wayland)
+![Codex Desktop on Linux](docs/guides/codex/images/codex_linux.png)
 
 For a detailed step-by-step walkthrough on preparing, compiling dependencies, and launching Codex, see the **[Codex Desktop Launch Guide](docs/guides/codex/README.md)**.
 
