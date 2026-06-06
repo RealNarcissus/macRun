@@ -570,11 +570,37 @@ std::vector<std::string> ElectronAdapter::build_child_environment() {
     if (act.normalization)  overrides.push_back("MACRUN_SHIM_NORMALIZATION=1");
 
     if (act.diag_renderer)  overrides.push_back("MACRUN_DIAG_RENDERER=1");
+    // Check if the application is an ESM application (checks for boot-shim.cjs)
+    bool is_esm = false;
+    if (!extracted_app_dir_.empty()) {
+        struct stat st;
+        std::string check_path = extracted_app_dir_ + "/boot-shim.cjs";
+        if (stat(check_path.c_str(), &st) == 0) {
+            is_esm = true;
+        }
+    }
+
+    std::string node_options;
+    if (const char* host_opts = std::getenv("NODE_OPTIONS")) {
+        node_options = host_opts;
+    }
+    if (act.diag_main && !shims_dir_.empty()) {
+        if (!node_options.empty()) node_options += " ";
+        node_options = node_options + "--require=" + shims_dir_ + "/main-diag.js";
+    }
+    if (is_esm && !shims_dir_.empty()) {
+        std::string loader_path = shims_dir_ + "/esm-loader.mjs";
+        struct stat st;
+        if (stat(loader_path.c_str(), &st) == 0) {
+            if (!node_options.empty()) node_options += " ";
+            node_options += "--experimental-loader=" + loader_path;
+        }
+    }
+    if (!node_options.empty()) {
+        overrides.push_back("NODE_OPTIONS=" + node_options);
+    }
     if (act.diag_main) {
         overrides.push_back("MACRUN_DIAG_MAIN=1");
-        if (!shims_dir_.empty()) {
-            overrides.push_back("NODE_OPTIONS=--require=" + shims_dir_ + "/main-diag.js");
-        }
     }
     if (act.diag_renderer || act.diag_main) {
         overrides.push_back("MACRUN_DIAG_FILE=/tmp/macrun-diag-" + std::to_string(getpid()) + ".log");
@@ -598,7 +624,8 @@ std::vector<std::string> ElectronAdapter::build_child_environment() {
     // Preserve basic host environment vars
     for (const char* key : {
         "PATH", "DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", 
-        "PULSE_SERVER", "DBUS_SESSION_BUS_ADDRESS", "LANG", "LC_ALL"
+        "PULSE_SERVER", "DBUS_SESSION_BUS_ADDRESS", "LANG", "LC_ALL",
+        "NODE_PATH"
     }) {
         if (const char* val = std::getenv(key)) {
             overrides.push_back(std::string(key) + "=" + val);
@@ -629,20 +656,101 @@ bool ElectronAdapter::execute() {
 
     std::string app_dir;
     if (!asar_path_.empty()) {
-        extracted_app_dir_ = extract_asar(asar_path_);
-        if (extracted_app_dir_.empty()) {
-            detail_ = "ASAR extraction failed for: " + asar_path_;
-            log("FATAL", detail_);
-            status_ = AdapterStatus::Error;
-            return false;
+        struct stat st;
+        if (stat(asar_path_.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+            app_dir = asar_path_;
+            extracted_app_dir_ = app_dir;
+            log("INFO", "Running app directly from directory: " + app_dir);
+        } else {
+            extracted_app_dir_ = extract_asar(asar_path_);
+            if (extracted_app_dir_.empty()) {
+                detail_ = "ASAR extraction failed for: " + asar_path_;
+                log("FATAL", detail_);
+                status_ = AdapterStatus::Error;
+                return false;
+            }
+            app_dir = extracted_app_dir_;
         }
-        app_dir = extracted_app_dir_;
 
         // Dynamic Main-Process Boot-Shim Injection
-        std::string boot_shim_path = app_dir + "/boot-shim.js";
+        // Read package.json to determine if the app is an ES module
+        std::string entry_script = "index.js";
+        bool is_es_module = false;
+        std::string pkg_json_path = app_dir + "/package.json";
+        std::ifstream pkg_file(pkg_json_path);
+        if (pkg_file) {
+            std::string content((std::istreambuf_iterator<char>(pkg_file)),
+                                std::istreambuf_iterator<char>());
+            pkg_file.close();
+            
+            is_es_module = (content.find("\"type\"") != std::string::npos &&
+                            content.find("\"module\"") != std::string::npos);
+
+            auto pos = content.find("\"main\"");
+            if (pos != std::string::npos) {
+                auto colon = content.find(":", pos);
+                if (colon != std::string::npos) {
+                    auto start_quote = content.find("\"", colon);
+                    if (start_quote != std::string::npos) {
+                        auto end_quote = content.find("\"", start_quote + 1);
+                        if (end_quote != std::string::npos) {
+                            entry_script = content.substr(start_quote + 1, end_quote - start_quote - 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        std::string boot_shim_ext = is_es_module ? ".cjs" : ".js";
+        std::string boot_shim_path = app_dir + "/boot-shim" + boot_shim_ext;
+
         std::ofstream shim_file(boot_shim_path);
         if (shim_file) {
-            shim_file << "const Module = require('module');\n"
+            shim_file << "if (typeof process !== 'undefined' && typeof process.dlopen === 'function') {\n"
+                      << "  const origDlopen = process.dlopen;\n"
+                      << "  process.dlopen = function (module, filename, flags) {\n"
+                      << "    try {\n"
+                      << "      return origDlopen.call(this, module, filename, flags);\n"
+                      << "    } catch (e) {\n"
+                      << "      console.warn('[macrun-shim] Failed to load native module:', filename, '; Stubbing with a recursive Proxy. Error:', e.message);\n"
+                      << "      const makeProxyStub = function () {\n"
+                      << "        const stub = function () { return makeProxyStub(); };\n"
+                      << "        return new Proxy(stub, {\n"
+                      << "          get: function (target, prop) {\n"
+                      << "            if (typeof prop === 'symbol') {\n"
+                      << "              if (prop === Symbol.toStringTag) return 'MacRunStub';\n"
+                      << "              if (prop === Symbol.toPrimitive) return function(hint) {\n"
+                      << "                if (hint === 'string') return '[object MacRunStub]';\n"
+                      << "                return 0;\n"
+                      << "              };\n"
+                      << "              return undefined;\n"
+                      << "            }\n"
+                      << "            if (prop === 'then') return undefined;\n"
+                      << "            if (prop === 'inspect' || prop === 'prototype') return undefined;\n"
+                      << "            if (prop === 'toString') return function() { return '[object MacRunStub]'; };\n"
+                      << "            if (prop === 'valueOf') return function() { return 0; };\n"
+                      << "            return makeProxyStub();\n"
+                      << "          },\n"
+                      << "          apply: function (target, thisArg, argumentsList) {\n"
+                      << "            return makeProxyStub();\n"
+                      << "          }\n"
+                      << "        });\n"
+                      << "      };\n"
+                      << "      module.exports = makeProxyStub();\n"
+                      << "      return;\n"
+                      << "    }\n"
+                      << "  };\n"
+                      << "}\n"
+                      << "if (typeof globalThis.crypto === 'undefined') {\n"
+                      << "  try {\n"
+                      << "    Object.defineProperty(globalThis, 'crypto', {\n"
+                      << "      value: require('node:crypto').webcrypto,\n"
+                      << "      configurable: true,\n"
+                      << "      writable: true\n"
+                      << "    });\n"
+                      << "  } catch (_) {}\n"
+                      << "}\n"
+                      << "const Module = require('module');\n"
                       << "const originalLoad = Module._load;\n\n"
                       << "const mockInspectorPromises = {\n"
                       << "  Session: class Session {\n"
@@ -723,30 +831,6 @@ bool ElectronAdapter::execute() {
             shim_file.close();
             log("INFO", "Written dynamic boot-shim: " + boot_shim_path);
 
-            // Find main entry script from package.json
-            std::string entry_script = "index.js";
-            std::string pkg_json_path = app_dir + "/package.json";
-            std::ifstream pkg_file(pkg_json_path);
-            if (pkg_file) {
-                std::string content((std::istreambuf_iterator<char>(pkg_file)),
-                                    std::istreambuf_iterator<char>());
-                pkg_file.close();
-                
-                auto pos = content.find("\"main\"");
-                if (pos != std::string::npos) {
-                    auto colon = content.find(":", pos);
-                    if (colon != std::string::npos) {
-                        auto start_quote = content.find("\"", colon);
-                        if (start_quote != std::string::npos) {
-                            auto end_quote = content.find("\"", start_quote + 1);
-                            if (end_quote != std::string::npos) {
-                                entry_script = content.substr(start_quote + 1, end_quote - start_quote - 1);
-                            }
-                        }
-                    }
-                }
-            }
-
             std::string entry_path = app_dir + "/" + entry_script;
             if (file_exists(entry_path)) {
                 std::ifstream entry_read(entry_path);
@@ -755,14 +839,23 @@ bool ElectronAdapter::execute() {
                                             std::istreambuf_iterator<char>());
                     entry_read.close();
 
-                    std::ofstream entry_write(entry_path);
-                    if (entry_write) {
-                        entry_write << "require('" << boot_shim_path << "');\n"
-                                    << original_js;
-                        entry_write.close();
-                        log("INFO", "Prepended boot-shim require to main entry script: " + entry_path);
+                    if (original_js.find("boot-shim") == std::string::npos) {
+                        std::ofstream entry_write(entry_path);
+                        if (entry_write) {
+                            if (is_es_module) {
+                                entry_write << "import '" << boot_shim_path << "';\n"
+                                            << original_js;
+                            } else {
+                                entry_write << "require('" << boot_shim_path << "');\n"
+                                            << original_js;
+                            }
+                            entry_write.close();
+                            log("INFO", "Prepended boot-shim require/import to main entry script: " + entry_path);
+                        } else {
+                            log("ERROR", "Failed to write updated entry script: " + entry_path);
+                        }
                     } else {
-                        log("ERROR", "Failed to write updated entry script: " + entry_path);
+                        log("INFO", "boot-shim already prepended to main entry script: " + entry_path);
                     }
                 } else {
                     log("ERROR", "Failed to read entry script: " + entry_path);

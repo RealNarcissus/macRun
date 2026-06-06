@@ -257,8 +257,13 @@ ExecutionResult execute_plan(const LaunchPlan& plan) {
                 asar_path = bundle_path + "/Contents/Resources/default_app.asar";
             }
             if (stat(asar_path.c_str(), &st) != 0) {
-                // Some apps ship without .asar — executable path is the app
-                asar_path.clear();
+                // Check if it ships as a pre-extracted app directory
+                std::string app_dir_path = bundle_path + "/Contents/Resources/app";
+                if (stat(app_dir_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+                    asar_path = app_dir_path;
+                } else {
+                    asar_path.clear();
+                }
             }
 
             if (!asar_path.empty()) {

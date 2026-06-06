@@ -30,6 +30,9 @@ SHIM_FILES=(
     "electron-normalization-registry.js"
     "renderer-diag.js"
     "main-diag.js"
+    "esm-loader.mjs"
+    "mock-diagnostics-channel.mjs"
+    "mock-module.mjs"
 )
 
 copied=0

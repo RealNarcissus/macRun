@@ -6,6 +6,17 @@
 // for common macOS-specific Electron APIs that apps check at startup.
 
 (function normalize_platform() {
+    // globalThis.crypto fallback for Node 18 environments
+    if (typeof globalThis !== 'undefined' && typeof globalThis.crypto === 'undefined') {
+        try {
+            Object.defineProperty(globalThis, 'crypto', {
+                value: require('node:crypto').webcrypto,
+                configurable: true,
+                writable: true
+            });
+        } catch (_) {}
+    }
+
     // Redefine process.resourcesPath to point to the extracted app directory
     if (typeof process !== 'undefined' && process.env.MACRUN_EXTRACTED_APP_DIR) {
         try {
