@@ -50,6 +50,48 @@ To maintain project scope and integrity, the following are explicitly **out of s
 
 ---
 
+## Quick Start: Running Applications
+
+To build the platform, deploy the integration shims, and execute macOS app bundles natively on Linux:
+
+### 1. Build and Install Shims
+Compile the orchestrator CLI and install the javascript compatibility layers:
+```bash
+# Compile the orchestrator
+cmake --build build
+
+# Install integration shims to cached runtime path (~/.cache/macrun/shims)
+./runtime/shims/install.sh
+```
+
+### 2. Launch macOS Apps
+Launch the extracted macOS `.app` bundle using the `macRun` orchestrator:
+
+* **Obsidian**:
+  ```bash
+  MACRUN_ALLOW_DARWIN_NATIVE=1 \
+  NODE_PATH=~/.local/npm-global/lib/node_modules \
+  ./build/tooling/macrun-cli/macrun-cli --launch "/path/to/Obsidian.app"
+  ```
+
+* **Claude Desktop**:
+  ```bash
+  MACRUN_ALLOW_DARWIN_NATIVE=1 \
+  NODE_PATH=~/.local/npm-global/lib/node_modules \
+  MACRUN_DIAG_RENDERER=1 MACRUN_DIAG_MAIN=1 \
+  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/path/to/Claude.app"
+  ```
+
+* **Cursor**:
+  ```bash
+  MACRUN_ALLOW_DARWIN_NATIVE=1 \
+  NODE_PATH=~/.local/npm-global/lib/node_modules \
+  MACRUN_DIAG_RENDERER=1 MACRUN_DIAG_MAIN=1 \
+  ./build/tooling/macrun-cli/macrun-cli --launch --diagnostics "/path/to/Cursor.app"
+  ```
+
+---
+
 ## Architecture & Documentation
 
 To explore the systems engineering details, governance rules, and implementation models, please refer to the public documentation index:
