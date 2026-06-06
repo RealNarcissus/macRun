@@ -313,8 +313,8 @@
         {
             id: 'platform-check-bypass',
             target: 'process.platform',
-            min: '28.0.0',
-            max: '28.99.99',
+            min: '0.0.0',
+            max: '999.99.99',
             riskClass: 'B',
             degradation: 'shimmed',
             reason: 'Bypass macOS platform validation checks in application main bundle.',
