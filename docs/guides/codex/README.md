@@ -1,6 +1,6 @@
-# Running Codex Desktop on Linux via MacRun
+# Running Codex Desktop on Linux via macRun
 
-This guide details the step-by-step process to execute the modern macOS **Codex Desktop** application natively on Linux using the **MacRun** platform. 
+This guide details the step-by-step process to execute the modern macOS **Codex Desktop** application natively on Linux using the **macRun** platform. 
 
 Codex Desktop is a **Class D: Client-Server** application: it features an Electron front-end shell that communicates via a stdio-based Model Context Protocol (MCP) pipe with a bundled macOS command-line backend app-server (`codex`). It also relies on a local SQLite database module (`better-sqlite3`) to manage configuration, local projects, and user session states.
 
@@ -10,7 +10,7 @@ By following this guide, you will compile the required Linux-native SQLite modul
 
 ## Screenshots of Successful Execution
 
-Here is Codex Desktop running on Ubuntu 24.04 via the MacRun platform under our newly implemented C++ dynamic runtime shims:
+Here is Codex Desktop running on Ubuntu 24.04 via the macRun platform under our newly implemented C++ dynamic runtime shims:
 
 ### Light Mode Layout
 ![Codex in Light Mode](images/codex_light.png)
@@ -20,12 +20,12 @@ Here is Codex Desktop running on Ubuntu 24.04 via the MacRun platform under our 
 
 ---
 
-## Step 1: Install Platform Prerequisites & Build MacRun
+## Step 1: Install Platform Prerequisites & Build macRun
 
 Ensure your host environment has all standard build tools, Node.js, and compiler suites installed.
 
 ```bash
-# 1. Compile the MacRun orchestrator CLI
+# 1. Compile the macRun orchestrator CLI
 cmake -B build
 cmake --build build
 
@@ -37,7 +37,7 @@ cmake --build build
 ```
 
 > [!NOTE]
-> MacRun dynamically inspects the Codex bundle framework metadata and negotiates the closest matching runtime version. It automatically resolves that Codex was built against **Electron 42.1.0** and targets the cached host environment's **Electron 42.3.3** binary for execution.
+> macRun dynamically inspects the Codex bundle framework metadata and negotiates the closest matching runtime version. It automatically resolves that Codex was built against **Electron 42.1.0** and targets the cached host environment's **Electron 42.3.3** binary for execution.
 
 ---
 

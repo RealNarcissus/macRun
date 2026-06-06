@@ -1,14 +1,14 @@
-# MacRun Architecture Overview
+# macRun Architecture Overview
 
-This document describes the systems architecture of **MacRun**, a governed macOS application compatibility and runtime substitution platform for Linux.
+This document describes the systems architecture of **macRun**, a governed macOS application compatibility and runtime substitution platform for Linux.
 
 ---
 
 ## Architecture Design Philosophy
 
-MacRun is built around three core architectural tenets:
+macRun is built around three core architectural tenets:
 1. **Asymmetric Application Category Strategy**: Electron apps are not native Cocoa apps, and Cocoa apps are not SwiftUI apps. Treating them identically is inefficient. Decoupling application types allows us to apply targeted compatibility layers.
-2. **Hybrid Execution Model**: Rather than striving for ideological purity (e.g., full OS emulation), MacRun selects the lowest-complexity viable strategy: native runtime substitution where possible, translation where feasible, and VM-assisted virtualization where required.
+2. **Hybrid Execution Model**: Rather than striving for ideological purity (e.g., full OS emulation), macRun selects the lowest-complexity viable strategy: native runtime substitution where possible, translation where feasible, and VM-assisted virtualization where required.
 3. **Orchestration / Substrate Separation**: The platform's orchestrator is substrate-agnostic. Runtimes are isolated behind clean, adapter-based boundaries to ensure stability and maintainability.
 
 ```
@@ -65,17 +65,17 @@ When an application is launched via the `macrun` command, it passes through a st
 
 ## Tier 0: Runtime Substitution
 
-To support modern web-native desktop applications (Electron, Tauri, Wails), MacRun avoids binary emulation entirely:
-- **Decoupled Assets**: MacRun extracts the JavaScript/HTML/CSS assets (e.g., extracting the `.asar` file in Electron apps).
+To support modern web-native desktop applications (Electron, Tauri, Wails), macRun avoids binary emulation entirely:
+- **Decoupled Assets**: macRun extracts the JavaScript/HTML/CSS assets (e.g., extracting the `.asar` file in Electron apps).
 - **Environment Swap**: The assets are executed directly inside a native, compatible Linux runtime shell (such as a Linux Electron or WebKitGTK instance).
-- **API Normalization & Shimming**: To reconcile the differences between the macOS runtime assumptions and the Linux host, MacRun runs a series of lightweight, conditional shims. These shims map XDG paths, redirect notifications, capture clipboard actions, and handle environment/platform differences.
+- **API Normalization & Shimming**: To reconcile the differences between the macOS runtime assumptions and the Linux host, macRun runs a series of lightweight, conditional shims. These shims map XDG paths, redirect notifications, capture clipboard actions, and handle environment/platform differences.
 
 ---
 
 ## Tier 1-2: Darling Substrate & Adapter Isolation
 
 For compiled command-line and simple graphical macOS binaries:
-- **Darling Substrate**: MacRun orchestrates a userspace Darling environment to provide Darwin Mach-O loading and syscall compatibility.
+- **Darling Substrate**: macRun orchestrates a userspace Darling environment to provide Darwin Mach-O loading and syscall compatibility.
 - **Adapterized Boundaries**: All substrate execution details are isolated behind strict interface adapters:
   - `IElectronAdapter`: Controls asset parsing and Linux runtime launching.
   - `IDarlingAdapter`: Manages the Darling prefix, environment setup, and Mach-O invocation.

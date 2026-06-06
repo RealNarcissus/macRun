@@ -1,6 +1,6 @@
-# MacRun Documentation Index
+# macRun Documentation Index
 
-Welcome to the public developer documentation for the **MacRun** compatibility platform. This directory contains synthesized architectural, governance, and tier details for the developer preview release.
+Welcome to the public developer documentation for the **macRun** compatibility platform. This directory contains synthesized architectural, governance, and tier details for the developer preview release.
 
 ## Available Documents
 

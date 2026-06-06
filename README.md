@@ -1,6 +1,6 @@
-# MacRun
+# macRun
 
-**MacRun** is a governed macOS application compatibility and runtime substitution platform for Linux.
+**macRun** is a governed macOS application compatibility and runtime substitution platform for Linux.
 
 > **Developer / Architecture Preview Release**
 > This repository represents an early architecture preview and developer prototype. It is NOT a
@@ -22,7 +22,7 @@ patching and republishing each new release by hand. These are valuable efforts, 
 dependency on a maintainer keeping pace with upstream. When Claude Desktop or Codex ships an
 update, users wait.
 
-MacRun takes a different approach. Rather than repackaging, it runs the original unmodified app
+macRun takes a different approach. Rather than repackaging, it runs the original unmodified app
 bundle directly on Linux through a governed runtime substitution and compatibility layer. No
 repackaging lag. No third-party distribution chain. The app runs from source as shipped.
 
@@ -31,7 +31,7 @@ repackaging lag. No third-party distribution chain. The app runs from source as 
 ## The Approach: Governed Compatibility
 
 Rather than building a monolithic macOS emulator or reimplementing SwiftUI/AppKit/Metal from
-scratch, MacRun implements a hybrid compatibility model. It classifies applications into execution
+scratch, macRun implements a hybrid compatibility model. It classifies applications into execution
 tiers and applies the lowest-complexity viable runtime strategy for each:
 
 1. **Tier 0: Runtime Substitution** (Electron/Tauri/Wails) — Extracts the app's HTML/JS/CSS
@@ -73,13 +73,13 @@ interfaces are established. Active development.
 
 ## Validation Proofs
 
-MacRun has been validated against two categories of applications:
+macRun has been validated against two categories of applications:
 
 ### Primary Targets (no official Linux build)
 
 **Claude Desktop** and **Codex Desktop** have no official Linux releases. Community repackaging
 repos exist for both, but depend on a maintainer manually patching and republishing each upstream
-update. MacRun runs the original unmodified app bundle directly, with the compatibility layer
+update. macRun runs the original unmodified app bundle directly, with the compatibility layer
 handling platform differences transparently.
 
 - **Claude Desktop** running on Linux (Electron 42 Substrate):
@@ -107,13 +107,13 @@ conditions:
 
 ## Non-Goals
 
-- **Not a macOS Desktop Clone**: MacRun does not recreate Finder, Dock, or the macOS desktop
+- **Not a macOS Desktop Clone**: macRun does not recreate Finder, Dock, or the macOS desktop
   environment.
-- **Not a Wine Replacement**: MacRun does not target general-purpose Windows or macOS game
+- **Not a Wine Replacement**: macRun does not target general-purpose Windows or macOS game
   translation.
-- **Not a Security Sandbox**: MacRun does not provide containment guarantees beyond native
+- **Not a Security Sandbox**: macRun does not provide containment guarantees beyond native
   process boundaries.
-- **Not Universal Compatibility**: MacRun does not promise SwiftUI, Metal, or AppKit parity.
+- **Not Universal Compatibility**: macRun does not promise SwiftUI, Metal, or AppKit parity.
 - **Not Production-Ready**: Tier 1 and above components are under active design and partially
   stubbed.
 

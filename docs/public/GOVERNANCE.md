@@ -1,6 +1,6 @@
-# MacRun Governance, Normalization & Degradation Model
+# macRun Governance, Normalization & Degradation Model
 
-This document outlines the governance and diagnostics framework that regulates application compatibility, runtime substitution, and graceful degradation in **MacRun**.
+This document outlines the governance and diagnostics framework that regulates application compatibility, runtime substitution, and graceful degradation in **macRun**.
 
 ---
 
@@ -8,7 +8,7 @@ This document outlines the governance and diagnostics framework that regulates a
 
 > *"Degradation is a governed contract, not a runtime accident."*
 
-To avoid the chaotic, untraceable failures common in compatibility layers, MacRun mandates that every compatibility compromise is explicit, diagnosable, bounded, reversible, and adapter-owned.
+To avoid the chaotic, untraceable failures common in compatibility layers, macRun mandates that every compatibility compromise is explicit, diagnosable, bounded, reversible, and adapter-owned.
 
 We define 7 strict **Degradation Categories**:
 
@@ -39,7 +39,7 @@ In Tier 0 (Electron Substitution), normalizations and bridges are injected into 
 
 ## 3. Electron API Normalization Governance
 
-To prevent runtime errors when applications request macOS-specific APIs, MacRun routes all Electron API patches through a centralized **Normalization Registry**:
+To prevent runtime errors when applications request macOS-specific APIs, macRun routes all Electron API patches through a centralized **Normalization Registry**:
 
 - **Cosmetic No-Op (Class A)**: Returns safe mock values (e.g., `systemPreferences.isSwipeTrackingFromScrollEventsEnabled()` returns `false`).
 - **Passive Intercept (Class B)**: Intercepts read requests and returns mock objects or redirected properties (e.g., system configuration reads).
@@ -50,7 +50,7 @@ To prevent runtime errors when applications request macOS-specific APIs, MacRun 
 
 ## 4. Semantic Diagnostics Infrastructure
 
-MacRun incorporates a dedicated diagnostics layer to detect compatibility regressions during runtime substitution:
+macRun incorporates a dedicated diagnostics layer to detect compatibility regressions during runtime substitution:
 
 - **Observability Hooks**: Diagnostic scripts intercept the Main and Renderer processes to capture API access patterns, file-system mapping failures, and binary linkage mismatches.
 - **16 Semantic Failure Classifications**: Errors are grouped into recognizable, actionable labels (e.g., `MISSING_DEPENDENCY`, `DARWIN_NATIVE_LOAD_FAILURE`, `NETWORK_RESTRICTION`, `IPC_TIMEOUT`).
