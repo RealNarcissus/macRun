@@ -9,6 +9,7 @@ class IElectronAdapter : public virtual ILifecycle,
 public:
     virtual ~IElectronAdapter() = default;
     virtual void resolve_runtime_version(const std::string& version) = 0;
+    virtual void set_bundle_info(const std::string& bundle_id, const std::string& app_name) = 0;
     virtual void set_asar_path(const std::string& asar_path) = 0;
     virtual void inject_preload(const std::string& preload_script_path) = 0;
     virtual bool execute() = 0;

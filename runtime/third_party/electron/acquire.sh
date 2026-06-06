@@ -23,9 +23,11 @@ declare -A ELECTRON_SHA256=(
     ["22.3.27"]="631d8eb08098c48ce2b29421e74c69ac0312b1e42f445d8a805414ba1242bf3a"
     ["24.8.8"]="f4604c0f0f346787abdbc364cac1e488441a2d21068ecbcf53052ed6ffb0309b"
     ["28.3.3"]="20f6be493cbd6c9924206e744b1c490af1f97f4735451b9dc19f0d305366d546"
+    ["41.7.1"]="0165fc68656f49ad7ae0c4254b1ff3af1718c114b6007a2aeef5211e0562f174"
+    ["42.3.3"]="bcc22137758607216d764dc453e2fea454c808793c3d6a82ddf86a36f9defa2c"
 )
 
-ELECTRON_VERSIONS=("22.3.27" "24.8.8" "28.3.3")
+ELECTRON_VERSIONS=("22.3.27" "24.8.8" "28.3.3" "41.7.1" "42.3.3")
 ACQUIRE_ALL=false
 DRY_RUN=false
 VERIFY_ONLY=false
@@ -259,6 +261,18 @@ cat > "$MANIFEST_DIR/electron-versions.json" << 'VEOF'
       "status": "recommended",
       "macos_equivalent": "Electron 28",
       "cache_path": "~/.cache/macrun/electron/electron-28.3.3"
+    },
+    "41.x": {
+      "exact": "41.7.1",
+      "status": "supported",
+      "macos_equivalent": "Electron 41",
+      "cache_path": "~/.cache/macrun/electron/electron-41.7.1"
+    },
+    "42.x": {
+      "exact": "42.3.3",
+      "status": "supported",
+      "macos_equivalent": "Electron 42",
+      "cache_path": "~/.cache/macrun/electron/electron-42.3.3"
     }
   },
   "integrity": {

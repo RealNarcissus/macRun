@@ -6,8 +6,132 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
+#include <json.hpp>
+#include <cctype>
 
 namespace platform {
+
+static std::string read_file(const std::string& path);
+
+namespace fs = std::filesystem;
+
+static std::string extract_xml_tag_value(const std::string& xml, const std::string& key) {
+    std::string search = "<key>" + key + "</key>";
+    auto pos = xml.find(search);
+    if (pos == std::string::npos) return {};
+
+    pos += search.length();
+    while (pos < xml.length() && (xml[pos] == ' ' || xml[pos] == '\n' || xml[pos] == '\r' || xml[pos] == '\t'))
+        pos++;
+
+    if (pos >= xml.length()) return {};
+
+    if (xml.compare(pos, 8, "<string>") == 0) {
+        pos += 8;
+        auto end = xml.find("</string>", pos);
+        if (end == std::string::npos) return {};
+        return xml.substr(pos, end - pos);
+    }
+    return {};
+}
+
+static std::string bplist_extract_string_value(const std::string& data, const std::string& key) {
+    auto pos = data.find(key);
+    if (pos == std::string::npos) return {};
+    pos += key.length();
+
+    size_t max_scan = std::min(pos + 256, data.size());
+    while (pos < max_scan && (static_cast<unsigned char>(data[pos]) < 0x20 ||
+                              static_cast<unsigned char>(data[pos]) > 0x7e)) {
+        pos++;
+    }
+
+    size_t start = pos;
+    while (pos < max_scan &&
+           static_cast<unsigned char>(data[pos]) >= 0x20 &&
+           static_cast<unsigned char>(data[pos]) <= 0x7e &&
+           pos - start < 128) {
+        if (pos > start && data[pos] == 'C' && pos + 3 < max_scan) {
+            if (data.compare(pos, 9, "CFBundle") == 0) break;
+        }
+        pos++;
+    }
+
+    if (pos > start) {
+        return data.substr(start, pos - start);
+    }
+    return {};
+}
+
+static std::string detect_electron_version_from_package_json(const std::string& app_bundle_path) {
+    std::string pkg_path = app_bundle_path + "/Contents/Resources/app/package.json";
+    std::error_code ec;
+    if (fs::exists(pkg_path, ec)) {
+        std::string content = read_file(pkg_path);
+        try {
+            auto j = nlohmann::json::parse(content);
+            std::string v;
+            if (j.contains("devDependencies") && j["devDependencies"].contains("electron")) {
+                v = j["devDependencies"]["electron"].get<std::string>();
+            } else if (j.contains("dependencies") && j["dependencies"].contains("electron")) {
+                v = j["dependencies"]["electron"].get<std::string>();
+            }
+            if (!v.empty()) {
+                size_t start = 0;
+                while (start < v.size() && (v[start] == '^' || v[start] == '~' || v[start] == '=' || v[start] == ' ' || v[start] == '>')) {
+                    start++;
+                }
+                return v.substr(start);
+            }
+        } catch (...) {
+        }
+    }
+    return "";
+}
+
+static std::string detect_electron_version(const std::string& app_bundle_path) {
+    std::string pkg_ver = detect_electron_version_from_package_json(app_bundle_path);
+    if (!pkg_ver.empty()) {
+        return pkg_ver;
+    }
+
+    std::string frameworks_dir = app_bundle_path + "/Contents/Frameworks";
+    std::error_code ec;
+    if (fs::exists(frameworks_dir, ec)) {
+        for (const auto& entry : fs::directory_iterator(frameworks_dir, ec)) {
+            if (entry.is_directory() && entry.path().extension() == ".framework") {
+                std::string fw_name = entry.path().filename().string();
+                std::string plist_path = entry.path().string() + "/Resources/Info.plist";
+                if (!fs::exists(plist_path, ec)) {
+                    plist_path = entry.path().string() + "/Versions/Current/Resources/Info.plist";
+                }
+                if (fs::exists(plist_path, ec)) {
+                    std::string plist_data = read_file(plist_path);
+                    std::string bundle_id, version;
+                    if (plist_data.size() >= 6 && plist_data.compare(0, 8, "bplist00") == 0) {
+                        bundle_id = bplist_extract_string_value(plist_data, "CFBundleIdentifier");
+                        version = bplist_extract_string_value(plist_data, "CFBundleShortVersionString");
+                    } else {
+                        bundle_id = extract_xml_tag_value(plist_data, "CFBundleIdentifier");
+                        version = extract_xml_tag_value(plist_data, "CFBundleShortVersionString");
+                    }
+
+                    if (bundle_id == "com.github.Electron.Framework" ||
+                        fw_name == "Electron Framework.framework" ||
+                        bundle_id.find("electron") != std::string::npos ||
+                        fw_name.find("Electron") != std::string::npos ||
+                        bundle_id.find(".framework") != std::string::npos) {
+                        if (!version.empty()) {
+                            return version;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return "";
+}
 
 static bool file_exists(const std::string& path) {
     struct stat st;
@@ -88,6 +212,14 @@ static DetectionResult run_pipeline(const std::string& app_bundle_path, Fingerpr
     } else {
         result.frameworks = fingerprint_frameworks(result.bundle, result.macho, result.entitlements);
     }
+
+    for (auto& fw : result.frameworks) {
+        if (fw.id == FrameworkId::Electron) {
+            fw.version = detect_electron_version(app_bundle_path);
+            log_diag(LogLevel::Info, "stage2_version electron_detected_version=" + fw.version);
+        }
+    }
+
     log_diag(LogLevel::Debug, "stage2_fingerprint frameworks_detected=" +
         std::to_string(result.frameworks.size()));
 

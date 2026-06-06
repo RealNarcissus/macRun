@@ -207,6 +207,12 @@ void ElectronAdapter::resolve_runtime_version(const std::string& version) {
     log("INFO", "Resolved Electron target version: " + version);
 }
 
+void ElectronAdapter::set_bundle_info(const std::string& bundle_id, const std::string& app_name) {
+    bundle_id_ = bundle_id;
+    app_name_ = app_name;
+    log("INFO", "App bundle info registered: id=" + bundle_id + " name=" + app_name);
+}
+
 void ElectronAdapter::set_asar_path(const std::string& asar_path) {
     asar_path_ = asar_path;
     log("INFO", "App ASAR file registered: " + asar_path);
@@ -262,6 +268,45 @@ ShimActivation ElectronAdapter::compute_shim_activation() const {
 // Runtime binary resolution
 // ============================================================
 
+struct SemanticVersion {
+    int major = 0;
+    int minor = 0;
+    int patch = 0;
+
+    static SemanticVersion parse(const std::string& str) {
+        SemanticVersion v;
+        size_t i = 0;
+        while (i < str.size() && !std::isdigit(static_cast<unsigned char>(str[i]))) {
+            i++;
+        }
+        if (i >= str.size()) return v;
+
+        std::string s = str.substr(i);
+        std::stringstream ss(s);
+        std::string part;
+        if (std::getline(ss, part, '.')) {
+            try { v.major = std::stoi(part); } catch (...) {}
+        }
+        if (std::getline(ss, part, '.')) {
+            try { v.minor = std::stoi(part); } catch (...) {}
+        }
+        if (std::getline(ss, part, '.')) {
+            try { v.patch = std::stoi(part); } catch (...) {}
+        }
+        return v;
+    }
+
+    bool operator==(const SemanticVersion& other) const {
+        return major == other.major && minor == other.minor && patch == other.patch;
+    }
+
+    bool operator<(const SemanticVersion& other) const {
+        if (major != other.major) return major < other.major;
+        if (minor != other.minor) return minor < other.minor;
+        return patch < other.patch;
+    }
+};
+
 std::string ElectronAdapter::resolve_runtime_binary() {
     if (use_mocks_) {
         return "/mock/path/electron";
@@ -292,24 +337,92 @@ std::string ElectronAdapter::resolve_runtime_binary() {
         return "";
     }
 
-    // If resolved_version_ is specified, try to find a matching one
+    std::string version_to_match = resolved_version_;
+    if (const char* ev = std::getenv("MACRUN_ELECTRON_VERSION")) {
+        version_to_match = ev;
+        log("INFO", "Substrate override in effect: MACRUN_ELECTRON_VERSION=" + version_to_match);
+    }
+
     std::string version_to_use;
-    if (!resolved_version_.empty()) {
+    std::string strategy = "fallback";
+
+    if (!version_to_match.empty() && version_to_match != "auto") {
+        SemanticVersion target = SemanticVersion::parse(version_to_match);
+
+        struct CacheEntry {
+            std::string folder_name;
+            SemanticVersion version;
+        };
+        std::vector<CacheEntry> entries;
         for (const auto& v : cached_versions) {
-            if (v.starts_with(resolved_version_)) {
-                version_to_use = v;
+            entries.push_back({v, SemanticVersion::parse(v)});
+        }
+
+        // 1. Look for exact match
+        for (const auto& entry : entries) {
+            if (entry.version == target) {
+                version_to_use = entry.folder_name;
+                strategy = "exact-match";
                 break;
             }
         }
+
+        // 2. Look for same major version
         if (version_to_use.empty()) {
-            log("WARN", "Requested version " + resolved_version_ + " not cached. Falling back to latest.");
+            std::vector<CacheEntry> same_major;
+            for (const auto& entry : entries) {
+                if (entry.version.major == target.major) {
+                    same_major.push_back(entry);
+                }
+            }
+            if (!same_major.empty()) {
+                std::sort(same_major.begin(), same_major.end(), [](const CacheEntry& a, const CacheEntry& b) {
+                    return b.version < a.version;
+                });
+                version_to_use = same_major[0].folder_name;
+                strategy = "nearest-match";
+            }
+        }
+
+        // 3. Look for nearest-higher version
+        if (version_to_use.empty()) {
+            std::vector<CacheEntry> higher;
+            for (const auto& entry : entries) {
+                if (target < entry.version) {
+                    higher.push_back(entry);
+                }
+            }
+            if (!higher.empty()) {
+                std::sort(higher.begin(), higher.end(), [](const CacheEntry& a, const CacheEntry& b) {
+                    return a.version < b.version;
+                });
+                version_to_use = higher[0].folder_name;
+                strategy = "nearest-match";
+            }
         }
     }
 
+    // 4. Fallback to highest cached version
     if (version_to_use.empty()) {
-        std::sort(cached_versions.begin(), cached_versions.end(), std::greater<std::string>());
-        version_to_use = cached_versions[0];
+        struct CacheEntry {
+            std::string folder_name;
+            SemanticVersion version;
+        };
+        std::vector<CacheEntry> entries;
+        for (const auto& v : cached_versions) {
+            entries.push_back({v, SemanticVersion::parse(v)});
+        }
+        std::sort(entries.begin(), entries.end(), [](const CacheEntry& a, const CacheEntry& b) {
+            return b.version < a.version;
+        });
+        version_to_use = entries[0].folder_name;
+        strategy = "fallback";
     }
+
+    std::cerr << "[MACRUN:SUBSTRATE] app=" << (bundle_id_.empty() ? "unknown" : bundle_id_)
+              << " detected_version=" << (resolved_version_.empty() ? "unknown" : resolved_version_)
+              << " selected_runtime=" << version_to_use
+              << " strategy=" << strategy << "\n";
 
     std::string binary_path = cache + "/" + version_to_use + "/electron";
     
@@ -527,6 +640,15 @@ std::vector<std::string> ElectronAdapter::build_command_line(const std::string& 
         argv.push_back("--disable-gpu-compositing");
     }
 
+    if (const char* env_args = std::getenv("MACRUN_ELECTRON_ARGS")) {
+        std::string args_str(env_args);
+        std::stringstream ss(args_str);
+        std::string arg;
+        while (ss >> arg) {
+            argv.push_back(arg);
+        }
+    }
+
     if (!shims_dir_.empty()) {
         std::string preload = shims_dir_ + "/preload-main.js";
         if (file_exists(preload)) {
@@ -706,7 +828,23 @@ bool ElectronAdapter::execute() {
 
         std::ofstream shim_file(boot_shim_path);
         if (shim_file) {
-            shim_file << "if (typeof process !== 'undefined' && typeof process.dlopen === 'function') {\n"
+            shim_file << "if (typeof process !== 'undefined') {\n"
+                      << "  if (process.stdout) {\n"
+                      << "    process.stdout.on('error', () => {});\n"
+                      << "    const origWrite = process.stdout.write;\n"
+                      << "    process.stdout.write = function() {\n"
+                      << "      try { return origWrite.apply(this, arguments); } catch(_) { return true; }\n"
+                      << "    };\n"
+                      << "  }\n"
+                      << "  if (process.stderr) {\n"
+                      << "    process.stderr.on('error', () => {});\n"
+                      << "    const origWrite = process.stderr.write;\n"
+                      << "    process.stderr.write = function() {\n"
+                      << "      try { return origWrite.apply(this, arguments); } catch(_) { return true; }\n"
+                      << "    };\n"
+                      << "  }\n"
+                      << "}\n"
+                      << "if (typeof process !== 'undefined' && typeof process.dlopen === 'function') {\n"
                       << "  const origDlopen = process.dlopen;\n"
                       << "  process.dlopen = function (module, filename, flags) {\n"
                       << "    try {\n"
@@ -794,6 +932,29 @@ bool ElectronAdapter::execute() {
                       << "    if (cachedProxy) return cachedProxy;\n"
                       << "    const electron = originalLoad.apply(this, arguments);\n"
                       << "    const overrides = {};\n"
+                      << "    if (electron && electron.BrowserWindow) {\n"
+                      << "      const originalBrowserWindow = electron.BrowserWindow;\n"
+                      << "      overrides.BrowserWindow = new Proxy(originalBrowserWindow, {\n"
+                      << "        construct(target, argumentsList, newTarget) {\n"
+                      << "          let options = argumentsList[0];\n"
+                      << "          if (options && typeof options === 'object') {\n"
+                      << "            if (options.transparent === true) {\n"
+                      << "              console.log('[macrun-shim] Overriding transparent: true -> false for BrowserWindow');\n"
+                      << "              options.transparent = false;\n"
+                      << "            }\n"
+                      << "            if (options.vibrancy) {\n"
+                      << "              console.log('[macrun-shim] Overriding vibrancy -> undefined for BrowserWindow');\n"
+                      << "              delete options.vibrancy;\n"
+                      << "            }\n"
+                      << "            if (options.backgroundColor && (options.backgroundColor.toLowerCase() === '#00000000' || options.backgroundColor.toLowerCase() === 'transparent')) {\n"
+                      << "              const isDark = electron.nativeTheme && electron.nativeTheme.shouldUseDarkColors;\n"
+                      << "              options.backgroundColor = isDark ? '#202020' : '#ffffff';\n"
+                      << "            }\n"
+                      << "          }\n"
+                      << "          return Reflect.construct(target, argumentsList, newTarget);\n"
+                      << "        }\n"
+                      << "      });\n"
+                      << "    }\n"
                       << "    cachedProxy = new Proxy({}, {\n"
                       << "      get(target, prop) {\n"
                       << "        if (overrides[prop] !== undefined) {\n"

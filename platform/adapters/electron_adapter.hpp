@@ -64,6 +64,7 @@ public:
 
     // IElectronAdapter
     void resolve_runtime_version(const std::string& version) override;
+    void set_bundle_info(const std::string& bundle_id, const std::string& app_name) override;
     void set_asar_path(const std::string& asar_path) override;
     void inject_preload(const std::string& preload_script_path) override;
     bool execute() override;
@@ -120,6 +121,8 @@ private:
     int exit_code_ = 0;
     std::string detail_;
     std::string resolved_version_;
+    std::string bundle_id_;
+    std::string app_name_;
     std::string asar_path_;
     std::vector<std::string> preload_scripts_;
     std::vector<DiagnosticEntry> logs_;

@@ -17,4 +17,5 @@ add_library(platform_detector STATIC
 )
 
 target_include_directories(platform_detector PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(platform_detector PRIVATE ${CMAKE_SOURCE_DIR}/third_party)
 target_link_libraries(platform_detector PUBLIC platform_common)

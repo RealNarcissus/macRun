@@ -28,6 +28,8 @@ inline void configure_adapter_for_electron(
     const RequiredCapabilities& caps,
     const platform::DetectionResult& detection)
 {
+    adapter.set_bundle_info(detection.bundle.bundle_identifier, detection.bundle.bundle_name);
+
     for (const auto& fw : detection.frameworks) {
         if (fw.id == platform::FrameworkId::Electron) {
             adapter.resolve_runtime_version(fw.version.empty() ? "auto" : fw.version);
@@ -43,7 +45,7 @@ inline void configure_adapter_for_electron(
     // Always inject basic shim preloads
     adapter.inject_preload("shims/preload-main.js");
 
-    if (caps.needs_gpu_disabled) {
+    if (caps.needs_gpu_disabled || (std::getenv("MACRUN_SHIM_DISABLE_GPU") && std::string(std::getenv("MACRUN_SHIM_DISABLE_GPU")) == "1")) {
         adapter.inject_preload("shims/disable-gpu.js");
     }
     if (caps.needs_autoupdater_disabled) {

@@ -20,6 +20,18 @@
       "status": "recommended",
       "macos_equivalent": "Electron 28",
       "cache_path": "~/.cache/macrun/electron/electron-28.3.3"
+    },
+    "41.x": {
+      "exact": "41.7.1",
+      "status": "supported",
+      "macos_equivalent": "Electron 41",
+      "cache_path": "~/.cache/macrun/electron/electron-41.7.1"
+    },
+    "42.x": {
+      "exact": "42.3.3",
+      "status": "supported",
+      "macos_equivalent": "Electron 42",
+      "cache_path": "~/.cache/macrun/electron/electron-42.3.3"
     }
   },
   "integrity": {
