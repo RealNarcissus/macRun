@@ -1,285 +1,328 @@
-# Roadmap
+# macRun — Roadmap
 
-This roadmap defines the current development direction for the macOS Runtime Platform for Linux.
+This roadmap reflects the actual current state of the project. It is intentionally
+honest about what is complete, what is in progress, and what is genuinely speculative.
 
-The roadmap is intentionally capability-driven rather than release-driven.
-
-The project prioritizes:
-
-* sustainable architecture,
-* execution correctness,
-* and compatibility utility
-
-over rapid feature accumulation.
+The roadmap is capability-driven, not release-driven. Phases do not have fixed dates.
+Exit criteria define completion, not calendars.
 
 ---
 
-# Guiding Principles
-
-Development priorities are governed by the following rules:
+## Guiding Principles
 
 1. Deliver the highest user utility earliest
 2. Prefer runtime substitution over emulation when viable
-3. Prefer explicit degradation over undefined behavior
+3. Prefer explicit degradation over silent failure
 4. Keep Linux as the primary user environment
-5. Avoid infinite compatibility scope
+5. Avoid infinite compatibility scope — the project fails if it chases full macOS parity
 
 ---
 
-# Phase 0 — Architecture and Infrastructure
+## Strategic Position
 
-Status: Complete
+macRun started as a macOS app launcher concept. It has evolved into something more
+specific and more useful: a governed runtime compatibility platform for modern desktop
+applications that ship macOS-first but run on cross-platform foundations.
 
-Objectives:
-
-* finalize execution model
-* define subsystem contracts
-* establish capability detection architecture
-* define VM-assisted execution model
-* formalize compatibility policies
-* harden architectural invariants
-
-Deliverables:
-
-* canonical architecture RFC
-* execution-tier model
-* compatibility-state definitions
-* subsystem ownership boundaries
-* roadmap and governance structure
-
-Exit Criteria:
-
-* architecture stable enough for implementation
-* subsystem responsibilities clearly defined
-* no unresolved foundational execution contradictions
+That distinction matters. The goal is not to recreate macOS. The goal is to make the
+applications Linux developers actually need work on Linux, with architecture that scales
+as those applications evolve.
 
 ---
 
-# Phase 1 — Runtime Substitution Layer
+## Realistic Current Position
 
-Priority: Highest
-Status: In Progress — Advanced Compatibility Engineering
-
-Goal:
-Run modern Electron/Tauri desktop applications with Linux-native UX.
-
-Focus Areas:
-
-* Electron runtime mapping
-* `.asar` extraction
-* platform API shims
-* Tauri frontend execution
-* application launcher (`macrun`)
-* compatibility database infrastructure
-* Electron API normalization (governed, registry-based)
-* native module compilation (SQLite, logging)
-* external process substitution (CLI backends)
-* runtime substrate negotiation (multi-version Electron)
-
-Discovered Application Compatibility Spectrum:
-
-* Class A: Self-Contained (Obsidian) — proxy stubbing sufficient
-* Class B: API Drift (Claude Desktop) — governed normalization required
-* Class C: IDE-Class (Cursor) — native module compilation required
-* Class D: Client-Server (Codex) — process substitution + substrate negotiation required
-
-See: docs/architecture/COMPATIBILITY_SPECTRUM.md
-
-Target Applications:
-
-* Obsidian — Class A — Functional
-* Claude Desktop — Class B — Functional
-* Cursor — Class C — Functional
-* Codex Desktop — Class D — Functional (rendering issues, substrate drift)
-* Windsurf — Class C/D — Untested
-* VS Code derivatives — Class C — Untested
-
-Expected Outcome:
-Linux users can run major AI/developer desktop applications without perceiving emulation.
-
-Current Experimental Direction:
-
-* Re-test Codex under Electron 41 runtime substrate to validate runtime negotiation hypothesis
-* See: docs/architecture/RUNTIME_NEGOTIATION.md
-
-Exit Criteria:
-
-* applications launch reliably across all four architecture classes
-* filesystem integration works
-* clipboard and notifications function
-* settings persist correctly
-* launch stability acceptable
-* runtime substrate negotiation validated for at least one Class D application
+| Area                    | Status              |
+|-------------------------|---------------------|
+| Architecture            | Mature              |
+| Governance model        | Mature              |
+| Electron substitution   | Strong, early-stage |
+| Complex Electron apps   | Emerging            |
+| Native module pipeline  | Active development  |
+| Darling / native apps   | Not started         |
+| VM-assisted execution   | Not started         |
+| Ecosystem tooling       | Minimal             |
+| Public visibility       | Very early          |
 
 ---
 
-# Phase 2 — Developer Runtime Compatibility
+## What Has Been Proven
 
-Goal:
-Provide reliable CLI/runtime compatibility for macOS developer tooling.
+Before the phased detail, the headline results:
 
-Focus Areas:
+**Electron runtime substitution works.** macRun runs Claude Desktop, Codex, Obsidian,
+and Cursor on Linux from their original unmodified macOS app bundles. No repackaging.
+No waiting on a maintainer to publish a new build when upstream ships an update.
 
-* Darling hardening
-* Mach-O execution stability
-* Homebrew workflows
-* Swift tooling
-* ARM64 translation
-* preference persistence
-* networking integration
-* keychain bridging
+**Backend substitution works.** Codex depends on a macOS-only Rust CLI backend. macRun
+successfully replaces it with a Linux-native equivalent, redirects the frontend's
+process bindings, and preserves full application functionality. This is not a stub or a
+workaround — it is a generalisable runtime-platform capability.
 
-Target Workflows:
-
-* Homebrew package installation
-* Swift package compilation
-* Git tooling
-* Python tooling
-* ARM64-only CLI binaries
-
-Exit Criteria:
-
-* stable CLI execution
-* persistent runtime environments
-* functional networking
-* acceptable translation overhead
-* regression stability maintained
+**Governance at this stage is unusual.** Most early compatibility projects accumulate
+undocumented hacks that become impossible to reason about. macRun has a degradation
+model, a shim governance layer, an API normalization registry, and structured
+diagnostics. The architecture can be extended without breaking what already works.
 
 ---
 
-# Phase 3 — Lightweight Cocoa Compatibility
+## Completed Phases
 
-Goal:
-Support lightweight native AppKit applications.
+### Phase 0 — Architecture and Governance
+**Status: Complete**
 
-Focus Areas:
+Established the canonical architecture, execution model, substrate model, failure model,
+degradation model, shim governance, API normalization model, and semantic diagnostics
+model. This phase produced the architectural identity of the project and is not expected
+to require major revision.
 
-* Wayland backend integration
-* lightweight Cocoa compatibility
-* CoreText integration
-* clipboard bridging
-* basic media playback
-* CoreAnimation flattening
-
-Constraints:
-This phase intentionally avoids:
-
-* deep SwiftUI correctness
-* advanced Metal integration
-* full compositor parity
-
-Target Applications:
-
-* lightweight utilities
-* note-taking apps
-* simple AppKit tools
-
-Exit Criteria:
-
-* applications render correctly
-* interaction stability acceptable
-* clipboard integration functional
-* media playback operational
-* application crashes minimized
+Key documents produced: ARCHITECTURE_V6.md, EXECUTION_MODEL.md, SUBSTRATE_MODEL.md,
+FAILURE_MODEL.md, DEGRADATION_MODEL.md, SHIM_GOVERNANCE.md,
+ELECTRON_API_NORMALIZATION.md, SEMANTIC_DIAGNOSTICS.md.
 
 ---
 
-# Phase 4 — VM-Assisted Runtime Maturity
+### Phase 1 — Detection and Orchestration
+**Status: Complete**
 
-Goal:
-Deliver polished execution for deeply integrated macOS applications.
-
-Focus Areas:
-
-* VM lifecycle management
-* per-window streaming
-* hotkey forwarding
-* clipboard synchronization
-* notification bridging
-* low-latency rendering
-* suspend/resume reliability
-
-Target Applications:
-
-* Raycast
-* Alfred
-* SwiftUI-heavy utilities
-
-Expected Outcome:
-Applications behave as native-feeling Linux windows while executing inside macOS guest environments.
-
-Exit Criteria:
-
-* warm launch latency acceptable
-* global hotkeys reliable
-* VM suspend/resume stable
-* low-latency interaction achieved
-* host integration seamless
+macRun can inspect any macOS .app bundle and determine what it is, which execution tier
+applies, and whether execution is supported. The pipeline covers bundle detection,
+Info.plist parsing, Mach-O classification, capability scoring, and tier routing.
 
 ---
 
-# Long-Term Research Areas
+### Phase 2 — Runtime Adapter Layer
+**Status: Complete**
 
-The following areas remain exploratory:
+The orchestrator is now substrate-independent. All execution backends (Electron, Darling,
+QEMU, WebKit) operate behind clean adapter interfaces. Substrate decisions do not leak
+into orchestration logic.
 
-* Vulkan-backed CoreAnimation
-* Metal translation layers
-* advanced SwiftUI compatibility
-* WKWebView routing
-* compositor acceleration
-* complex text rendering
-* cross-architecture optimization
-
-These are not required for initial platform success.
+Adapters currently implemented: ElectronAdapter (functional), DarlingAdapter (skeleton),
+QemuAdapter (skeleton), WebKitAdapter (skeleton).
 
 ---
 
-# Compatibility Philosophy
+### Phase 3 — Runtime Substitution Execution
+**Status: Complete**
 
-The platform is designed around:
+This phase grew significantly beyond its original scope and represents the largest
+engineering milestone to date.
 
-* controlled degradation,
-  not:
-* binary compatibility assumptions.
+**3A — Runtime Acquisition:** Electron, QEMU, Darling, and WebKit acquisition
+pipelines. Lifecycle management, health validation, integrity verification, runtime
+caching.
 
-Applications may operate in:
+**3B — Electron Runtime Integration:** ASAR extraction, preload injection, shim
+infrastructure, native module inspection, process containment, XDG integration,
+renderer lifecycle management.
 
-* verified,
-* functional,
-* degraded,
-* partial,
-* or unsupported states.
+**3C — Degradation Governance:** Degradation categories, unsafe mode governance,
+normalization governance, confidence classification, monotonic escalation, structured
+degradation reports.
 
-The system prioritizes:
+**3D — Semantic Diagnostics:** Renderer observability, IPC tracing, module-resolution
+tracing, DOM hydration analysis, semantic error classification, blank-window
+diagnostics.
 
-* explicit compatibility reporting,
-* diagnosability,
-* and stable user workflows.
+**3E — API Normalization:** Governed normalization registry, version-scoped API
+patching, transparent runtime normalization across Electron API drift.
 
-The compatibility problem is no longer "can Electron apps launch?"
-That problem is solved.
+**3F — Real-World Validation:** Obsidian (Class A), Claude Desktop (Class B), Cursor
+(Class C), Codex Desktop (Class D — partial, rendering issues under investigation).
 
-The current problem is:
-* compatibility-directed runtime orchestration across four architecture classes.
+The application compatibility spectrum that emerged from this phase:
 
-See:
-* docs/architecture/COMPATIBILITY_SPECTRUM.md — Application classification
-* docs/architecture/RUNTIME_NEGOTIATION.md — Substrate selection governance
-* docs/architecture/DEGRADATION_MODEL.md — Degradation categories and escalation
+| Class | Description                            | Example        | Status               |
+|-------|----------------------------------------|----------------|----------------------|
+| A     | Self-contained, no native dependencies | Obsidian       | Functional           |
+| B     | API drift requiring normalization      | Claude Desktop | Functional           |
+| C     | Native module compilation required     | Cursor         | Functional           |
+| D     | External backend substitution required | Codex          | Functional (partial) |
 
 ---
 
-# Success Criteria
+## Active Phase
 
-The project succeeds if Linux users can:
+### Phase 4 — Advanced Native Integration and Runtime Translation
+**Status: In Progress**
 
-* run the macOS applications they actually need,
-* with acceptable performance,
-* through execution strategies appropriate to each application category,
-* without requiring complete macOS reimplementation.
+This is where the project becomes significantly harder. The work in Phase 3 operated
+largely within the Electron runtime boundary. Phase 4 deals with everything outside it:
+native modules, external backends, GPU layers, PTY subsystems, and multi-version runtime
+management.
 
-The project fails if it expands toward:
+---
 
-* infinite framework parity,
-* unconstrained compatibility scope,
-* or full operating-system replication.
+#### Phase 4A — Critical Native Module Resolution
+**Status: Active**
+
+The focus right now. Class C and D applications depend on native Linux functionality
+that cannot be stubbed: SQLite engines, filesystem watchers, PTY subsystems, logging
+libraries, GPU bindings. The strategy is not generic stubbing but a proper native module
+substitution pipeline: ABI-compatible rebuilds, a module resolution registry, and
+rebuild automation targeting specific Electron versions via @electron/rebuild.
+
+Modules in scope: better-sqlite3, @vscode/sqlite3, node-pty, spdlog, filesystem
+watchers, GPU bindings, helper daemons.
+
+This phase is required to stabilise Cursor, Codex, and VSCode-class applications.
+
+Exit criteria: Cursor and Codex launch reliably without manual module intervention.
+Module substitution is declarative and registry-driven, not ad-hoc per application.
+
+---
+
+#### Phase 4B — Electron Runtime Matrix
+**Status: Next**
+
+macRun currently relies primarily on Electron 28 as its substitution runtime. Many
+modern applications target Electron 30, 32, 35, and 40+. Maintaining a full matrix of
+installed runtimes is not the goal — that path leads to unbounded maintenance surface.
+
+The goal instead is smarter version negotiation: a capability-based resolution model
+that selects the minimum viable runtime version for a given application's API surface,
+rather than trying to match version numbers exactly. The normalization registry handles
+API drift within a range; the matrix expansion reduces the range that normalization
+needs to cover.
+
+Exit criteria: macRun can negotiate runtime selection across at least three major
+Electron generations without manual configuration.
+
+---
+
+#### Phase 4C — Workspace and View Rendering Reliability
+**Status: Next**
+
+Complex Electron applications (VSCode-class, Codex) use multi-view rendering
+architectures: BrowserView, WebContentsView, split-pane orchestration, utility
+processes. These interact with GPU acceleration and React hydration in ways that produce
+rendering failures specific to the substitution environment. This phase investigates
+and resolves those failure modes systematically.
+
+Exit criteria: Codex renders without blank-window or hydration failures. Cursor
+workspace view is stable under normal usage.
+
+---
+
+#### Phase 4D — Linux Backend Substitution Framework
+**Status: Planned**
+
+The Codex backend substitution was solved manually. This phase generalises it into a
+first-class subsystem: a backend compatibility registry that maps macOS-only helper
+binaries and app-server processes to Linux-native equivalents, with declarative
+redirection rules and a resolution pipeline.
+
+This is potentially one of the most transferable innovations in the project. Any
+application that spawns a macOS-only subprocess becomes tractable through this
+framework, not just Codex.
+
+Exit criteria: Backend substitution is declarative. Adding a new application's backend
+mapping does not require code changes, only registry entries.
+
+---
+
+## Future Tiers
+
+The following phases are directionally committed but not yet in active planning. They
+are described honestly at the level of current understanding rather than padded with
+false specificity.
+
+---
+
+### Phase 5 — Darling Integration (Native Mach-O Execution)
+**Status: Future**
+
+This is where macRun moves beyond Electron into compiled native macOS binaries. It is
+also where the engineering difficulty increases by an order of magnitude.
+
+Darling provides Darwin syscall translation and Mach-O loading on Linux. macRun's
+DarlingAdapter skeleton is in place. The actual work involves: hardening Darling's
+stability for real-world applications, establishing a reliable Mach-O execution
+environment, bridging Foundation and AppKit at a level sufficient for lightweight
+utilities, and integrating with the existing degradation and diagnostics infrastructure.
+
+Target application category: menu bar utilities, lightweight Cocoa tools, CLI-adjacent
+native binaries, Objective-C applications with minimal UI surface.
+
+What will not be attempted in this phase: deep SwiftUI correctness, Metal integration,
+full AppKit parity. The scope boundary matters here — Phase 5 succeeds if a meaningful
+class of lightweight native apps becomes usable, not if all native apps work.
+
+Open questions that need answers before serious implementation begins: Darling's current
+stability characteristics on modern Linux kernels, which AppKit surface area is
+realistically achievable without a full compositor, and whether GNUstep's Wayland
+backend is a viable WindowServer replacement for this use case.
+
+---
+
+### Phase 6 — WebKit and Cocoa-Lite Runtime
+**Status: Future**
+
+A subset of macOS applications are built around WKWebView or lightweight SwiftUI
+wrappers over web content. These do not need full AppKit — they need a functional
+WebKit embedding and basic window management. WebKitGTK on Wayland is the likely
+foundation.
+
+This phase is narrower than Phase 5 and may be more tractable. It depends on Phase 5
+establishing the Darling substrate, but the rendering path diverges significantly.
+
+Open questions: WKWebView API surface compatibility via WebKitGTK, message handler
+bridging, and JavaScript context isolation.
+
+---
+
+### Phase 7 — QEMU Hybrid Execution
+**Status: Future**
+
+For applications that need deeper macOS system integration than Darling can provide,
+a hybrid model: Linux-hosted UI with a QEMU-backed execution environment connected
+via vsock bridges. This is the approach that handles Xcode-adjacent tooling and
+complex AppKit applications.
+
+This is substantially harder than Phases 5-6 and the architecture is less settled.
+The QemuAdapter skeleton exists but the streaming, bridging, and input routing design
+is not finalised. This phase will not begin until Phases 5 and 6 provide a clear
+picture of what Darling can and cannot handle.
+
+---
+
+### Phase 8 — Virtualized macOS Runtime
+**Status: Future — Last Resort Execution**
+
+Full VM-backed compatibility for applications that cannot run any other way. This is
+not the primary value proposition of macRun and will not be prioritised over the lower
+tiers. It exists as a ceiling for the compatibility model, not as a near-term goal.
+
+The VM lifecycle design (persistent vs on-demand), per-window framebuffer capture,
+hotkey forwarding, and clipboard synchronisation are all open architecture questions
+at this stage.
+
+---
+
+### Phase 9 — Productionisation and Ecosystem
+**Status: Future**
+
+Turning macRun from a developer platform into something a broader audience can use:
+package manager integration, Flatpak/AppImage support, a GUI launcher, a compatibility
+database website, automated CI testing against upstream app releases, and community
+runtime manifests.
+
+This phase is what makes the sustainability argument real. An automated pipeline that
+detects when Claude Desktop or Codex ships a new version and validates it against the
+macRun compatibility layer is the answer to the repackaging problem at scale.
+
+---
+
+## What Failure Looks Like
+
+The project fails if it:
+
+- expands toward infinite framework parity with macOS,
+- loses the governance model and becomes an undocumented collection of hacks,
+- attempts to solve every tier simultaneously instead of shipping working tiers,
+- or mistakes architectural completeness for user utility.
+
+The project succeeds if Linux users can run the applications they actually need, through
+execution strategies appropriate to each application category, without requiring full
+macOS reimplementation.
