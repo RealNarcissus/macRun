@@ -46,7 +46,7 @@ macRun is built around three core architectural tenets:
            │                           │                           │
            ▼                           ▼                           ▼
 ┌──────────────────┐      ┌──────────────────────┐     ┌──────────────────────┐
-│ Tier 0           │      │ Tier 1–3             │     │ Tier 4B              │
+│ Tier 0           │      │ Tier 1–3 (skeleton)  │     │ Tier 4B (planned)    │
 │ Runtime Swap     │      │ Compatibility Layer  │     │ VM-Assisted Runtime  │
 ├──────────────────┤      ├──────────────────────┤     ├──────────────────────┤
 │ Electron ✓       │      │ Darling Runtime      │     │ macOS VM             │
@@ -175,3 +175,12 @@ For complex, native macOS applications that cannot be executed in userspace:
 
 Phase 4 (Advanced Native Integration) is the active development frontier. See
 [ROADMAP.md](../../ROADMAP.md) for sub-phase breakdown and exit criteria.
+
+---
+
+## See Also
+
+- [GOVERNANCE.md](GOVERNANCE.md) — Normalization registries, preload shims, and degradation policies.
+- [LIMITATIONS.md](LIMITATIONS.md) — Compatibility tier matrix, primary targets, and known runtime restrictions.
+- [ROADMAP.md](../../ROADMAP.md) — Phased milestones, exit criteria, and implementation plan.
+

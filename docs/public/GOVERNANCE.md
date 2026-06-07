@@ -39,6 +39,9 @@ In Tier 0 (Electron Substitution), normalizations and bridges are injected into 
 
 ## 3. Electron API Normalization Governance
 
+> [!NOTE]
+> The **API Normalization Classes** (A, B, C, D) defined below categorize the complexity of API stubbing and patches in the Normalization Registry. They are distinct from the **Application Compatibility Spectrum** (Class A–D) defined in [LIMITATIONS.md](LIMITATIONS.md) and [ARCHITECTURE.md](ARCHITECTURE.md) (which classify entire application architectures like self-contained vs. client-server).
+
 To prevent runtime errors when applications request macOS-specific APIs, macRun routes all Electron API patches through a centralized **Normalization Registry**:
 
 - **Cosmetic No-Op (Class A)**: Returns safe mock values (e.g., `systemPreferences.isSwipeTrackingFromScrollEventsEnabled()` returns `false`).

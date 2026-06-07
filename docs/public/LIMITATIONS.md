@@ -3,6 +3,10 @@
 This document provides a realistic assessment of the capabilities, limitations, and
 development tiers of the **macRun** platform as of June 2026.
 
+> [!TIP]
+> **Having trouble launching an application?**
+> If your application fails to launch, crashes, or displays a blank screen, please consult the **[Blank-Window Investigation & Diagnostics Procedure](GOVERNANCE.md#4-semantic-diagnostics-infrastructure)** in [GOVERNANCE.md](GOVERNANCE.md) for step-by-step troubleshooting instructions.
+
 ---
 
 ## 1. Execution Tiers Matrix
@@ -40,6 +44,7 @@ original unmodified macOS app bundles.
   desktop notifications
 - **Degradation**: Auto-updater stubbed; credential storage bridged to `libsecret`
 - **Required Flags**: `MACRUN_ALLOW_DARWIN_NATIVE=1`
+- **Guide**: [docs/guides/claude/README.md](../guides/claude/README.md)
 
 #### Codex Desktop — Class D: Client-Server
 - **Status**: Functional

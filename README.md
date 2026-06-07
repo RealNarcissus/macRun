@@ -90,8 +90,7 @@ handling platform differences transparently.
 
 ![Codex Desktop on Linux](docs/guides/codex/images/codex_linux.png)
 
-For a detailed walkthrough on building the native SQLite module, mapping the Rust backend CLI,
-and launching Codex, see the [Codex Desktop Launch Guide](docs/guides/codex/README.md).
+For detailed guides on setup, native module building, and launching, see the [Claude Desktop Launch Guide](docs/guides/claude/README.md) and the [Codex Desktop Launch Guide](docs/guides/codex/README.md).
 
 ### Architecture Stress Tests (official Linux builds exist)
 
