@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "com.xingyuzhong.deepseekgui",
+  "bundle_identifier": "com.xingyuzhong.deepseekgui",
+  "application_name": "DeepSeek GUI",
+  "application_version": "0.2.5",
+  "execution_tier": "native-substitution",
+  "compatibility_state": "verified",
+  "architecture_class": "class_c_ide_platform",
+  "last_updated": "2026-06-07T20:55:00Z",
+  "tested_on": [
+    {
+      "distribution": "Ubuntu",
+      "version": "24.04",
+      "kernel_version": "6.8.0",
+      "arch": "x86_64"
+    }
+  ],
+  "known_issues": [
+    {
+      "id": "deepseekgui-framework-override-bug",
+      "severity": "low",
+      "description": "Detector auto-detection resolves Electron version 3.1.0 instead of 34.5.8 due to Squirrel.framework match precedence. Fixed by using MACRUN_ELECTRON_VERSION=42.3.3.",
+      "affected_subsystem": "detector"
+    },
+    {
+      "id": "deepseekgui-missing-unpacked-dependencies",
+      "severity": "medium",
+      "description": "ASAR header declares devDependencies (vitest, why-is-node-running) in app.asar.unpacked that are missing in the production DMG release, causing asar.extractAll to crash. Fixed by mocking fs in asar-extract.js to gracefully ignore missing unpacked assets.",
+      "affected_subsystem": "platform"
+    }
+  ],
+  "workarounds": [
+    {
+      "description": "Substitute Linux-native better-sqlite3 C++ module compiled for Electron 42.3.3 to avoid platform binary crash.",
+      "applies_to_issues": [],
+      "requires_flags": {}
+    }
+  ],
+  "critical_native_modules": [
+    {
+      "module": "better-sqlite3",
+      "role": "state-database",
+      "requires_compilation": true
+    }
+  ],
+  "runtime_policy": {
+    "preferred": ["42", "41", "34"],
+    "minimum": "34",
+    "validated": ["42.3.3"],
+    "fallback": ["28"]
+  },
+  "required_flags": {
+    "MACRUN_ELECTRON_VERSION": "42.3.3",
+    "MACRUN_ALLOW_DARWIN_NATIVE": "1"
+  },
+  "tags": ["electron", "ai-tool", "ide-class", "agent-workbench"],
+  "notes": "DeepSeek GUI runs successfully via Electron 42 runtime substitution. Pre-compiled Linux-native better-sqlite3 from Codex was reused successfully. Unpacked devDependencies packaging bug is handled gracefully via fs mock hooks in asar-extract.js."
+}

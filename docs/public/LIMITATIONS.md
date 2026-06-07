@@ -58,6 +58,15 @@ original unmodified macOS app bundles.
 - **Required Flags**: `MACRUN_ALLOW_DARWIN_NATIVE=1`, `CODEX_CLI_PATH=/path/to/codex`
 - **Guide**: [docs/guides/codex/README.md](../guides/codex/README.md)
 
+#### DeepSeek GUI — Class C: IDE-Class
+- **Status**: Functional
+- **Compatibility Class**: C — native module compilation required (better-sqlite3)
+- **Validated On**: Ubuntu 24.04, Electron 42.3.3 substrate (via substrate negotiation)
+- **Working**: Main application window rendering, local agent runtime (`kun`), database initialization
+- **Required Steps**: Copy or recompile Linux-native `better-sqlite3` module
+- **Required Flags**: `MACRUN_ELECTRON_VERSION=42.3.3`, `MACRUN_ALLOW_DARWIN_NATIVE=1`
+- **Guide**: [docs/guides/deepseek/README.md](../guides/deepseek/README.md)
+
 ### Architecture Stress Tests (official Linux builds exist)
 
 These applications have official Linux support and were used to validate the

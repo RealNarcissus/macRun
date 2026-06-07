@@ -12,9 +12,124 @@
 //   arg[2] = path to .asar archive
 //   arg[3] = path to extraction destination directory
 
-var path = require('path');
-var asarPath = process.argv[2];
-var destPath = process.argv[3];
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Helper to check if a path is part of an unpacked directory
+function isUnpackedPath(p) {
+    if (!p) return false;
+    const str = typeof p === 'string' ? p : p.toString();
+    return str.includes('.unpacked') || str.includes('app.asar.unpacked');
+}
+
+// 1. Mock sync APIs
+const originalReadFileSync = fs.readFileSync;
+fs.readFileSync = function (p, options) {
+    try {
+        return originalReadFileSync(p, options);
+    } catch (e) {
+        if (e.code === 'ENOENT' && isUnpackedPath(p)) {
+            console.warn(`[macrun:asar] Warning: Mocking missing sync file: ${p}`);
+            return Buffer.alloc(0);
+        }
+        throw e;
+    }
+};
+
+const originalStatSync = fs.statSync;
+fs.statSync = function (p, options) {
+    try {
+        return originalStatSync(p, options);
+    } catch (e) {
+        if (e.code === 'ENOENT' && isUnpackedPath(p)) {
+            console.warn(`[macrun:asar] Warning: Mocking missing sync stat: ${p}`);
+            return {
+                mode: 0o644,
+                size: 0,
+                isFile: () => true,
+                isDirectory: () => false,
+                isSymbolicLink: () => false
+            };
+        }
+        throw e;
+    }
+};
+
+// 2. Mock async callback APIs
+const originalReadFile = fs.readFile;
+fs.readFile = function (p, options, callback) {
+    if (typeof options === 'function') {
+        callback = options;
+        options = undefined;
+    }
+    originalReadFile(p, options, (err, data) => {
+        if (err && err.code === 'ENOENT' && isUnpackedPath(p)) {
+            console.warn(`[macrun:asar] Warning: Mocking missing async file: ${p}`);
+            return callback(null, Buffer.alloc(0));
+        }
+        callback(err, data);
+    });
+};
+
+const originalStat = fs.stat;
+fs.stat = function (p, options, callback) {
+    if (typeof options === 'function') {
+        callback = options;
+        options = undefined;
+    }
+    originalStat(p, options, (err, stats) => {
+        if (err && err.code === 'ENOENT' && isUnpackedPath(p)) {
+            console.warn(`[macrun:asar] Warning: Mocking missing async stat: ${p}`);
+            return callback(null, {
+                mode: 0o644,
+                size: 0,
+                isFile: () => true,
+                isDirectory: () => false,
+                isSymbolicLink: () => false
+            });
+        }
+        callback(err, stats);
+    });
+};
+
+// 3. Mock promises APIs
+if (fs.promises) {
+    const originalPromisesReadFile = fs.promises.readFile;
+    fs.promises.readFile = async function (p, options) {
+        try {
+            return await originalPromisesReadFile(p, options);
+        } catch (e) {
+            if (e.code === 'ENOENT' && isUnpackedPath(p)) {
+                console.warn(`[macrun:asar] Warning: Mocking missing promise file: ${p}`);
+                return Buffer.alloc(0);
+            }
+            throw e;
+        }
+    };
+
+    const originalPromisesStat = fs.promises.stat;
+    fs.promises.stat = async function (p, options) {
+        try {
+            return await originalPromisesStat(p, options);
+        } catch (e) {
+            if (e.code === 'ENOENT' && isUnpackedPath(p)) {
+                console.warn(`[macrun:asar] Warning: Mocking missing promise stat: ${p}`);
+                return {
+                    mode: 0o644,
+                    size: 0,
+                    isFile: () => true,
+                    isDirectory: () => false,
+                    isSymbolicLink: () => false
+                };
+            }
+            throw e;
+        }
+    };
+}
+
+// Now dynamically import asar
+const asarPath = process.argv[2];
+const destPath = process.argv[3];
 
 if (!asarPath || !destPath) {
     console.error('Usage: node asar-extract.js <asar_file> <dest_dir>');
@@ -22,11 +137,11 @@ if (!asarPath || !destPath) {
 }
 
 try {
-    var asar = require('@electron/asar');
+    const asar = await import('@electron/asar');
     asar.extractAll(asarPath, destPath);
     process.exit(0);
 } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') {
+    if (e.code === 'ERR_MODULE_NOT_FOUND' || e.code === 'MODULE_NOT_FOUND') {
         console.error('macrun: @electron/asar not installed. Run acquire.sh first.');
     } else {
         console.error('macrun: ASAR extraction failed: ' + e.message);

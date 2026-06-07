@@ -21,7 +21,8 @@ The platform has now tested four real-world Electron applications:
 | Obsidian | md.obsidian | Class A: Self-Contained | Functional |
 | Claude Desktop | com.anthropic.claudedesktop | Class B: API Drift | Functional |
 | Cursor | com.todesktop.230313mzl4w4u92 | Class C: IDE-Class | Functional |
-| Codex | com.openai.codex | Class D: Client-Server | Rendering issues (substrate drift suspected) |
+| DeepSeek GUI | com.xingyuzhong.deepseekgui | Class C: IDE-Class | Functional |
+| Codex | com.openai.codex | Class D: Client-Server | Functional |
 
 These applications revealed a progressively deeper compatibility spectrum.
 
@@ -84,7 +85,7 @@ Typically: Shimmed Compatibility
 
 ## Class C: IDE-Class Electron Platforms
 
-Example: Cursor
+Examples: Cursor, DeepSeek GUI
 
 ### Characteristics
 - VS Code-class architecture (fork or derivative)
