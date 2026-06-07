@@ -1,146 +1,109 @@
-# macOS Runtime Platform for Linux
+# macRun — Project Overview
 
-A hybrid compatibility platform for running modern macOS applications on Linux.
+macRun is a governed runtime compatibility platform for macOS applications on Linux.
 
-This project is not a full macOS reimplementation.
-Instead, it combines:
-
-* runtime substitution,
-* compatibility-layer execution,
-* ARM64 translation,
-* and VM-assisted application streaming
-
-to run the macOS applications Linux users actually care about.
-
-The platform is designed around:
-
-* native-feeling Linux UX,
-* sustainable engineering scope,
-* and execution strategies matched to application categories.
+It is not a macOS reimplementation. It is not a Wine-style translation layer. It is a
+platform that classifies macOS applications by their underlying runtime architecture and
+applies the minimum-complexity compatibility strategy to each — preferring runtime
+substitution over emulation wherever the application's foundations allow it.
 
 ---
 
-# Project Status
+## What macRun Does
 
-Early architecture and infrastructure phase.
+Modern developer tooling increasingly ships macOS-first. AI assistants, coding
+environments, and productivity tools built on cross-platform runtimes like Electron end
+up Linux-inaccessible — not because the technology is fundamentally incompatible, but
+because no governed compatibility infrastructure exists to bridge the gap.
 
-The current focus areas are:
+Community workarounds exist: some maintainers manually repackage macOS Electron apps for
+Linux, patching and republishing each new release by hand. When Claude Desktop or Codex
+ships an update, users on those forks wait.
 
-* execution model definition,
-* compatibility architecture,
-* runtime orchestration,
-* VM-assisted streaming design,
-* and capability detection systems.
-
-No stable releases are available yet.
-
----
-
-# Goals
-
-The project prioritizes:
-
-* AI desktop tooling
-* developer tooling
-* Electron/Tauri ecosystems
-* launcher/workflow applications
-* lightweight native Cocoa utilities
-* Linux-native user experience
-
-The project intentionally does not pursue:
-
-* full macOS parity,
-* complete SwiftUI fidelity,
-* kernel extension support,
-* Hypervisor.framework compatibility,
-* or full desktop-environment replication.
+macRun takes a different approach. Rather than repackaging, it runs the original
+unmodified app bundle directly on Linux through a governed runtime substitution and
+compatibility layer. No repackaging lag. No third-party distribution chain.
 
 ---
 
-# Architectural Overview
+## Current State
 
-The platform classifies applications into execution tiers and selects the lowest-complexity viable runtime strategy.
+**Phase 3 complete. Phase 4 is the active development frontier.**
 
-```text
-macOS App
+Tier 0 (Electron Runtime Substitution) is functional and validated:
+
+| Application    | Class | Status     | Notes                              |
+|----------------|-------|------------|------------------------------------|
+| Claude Desktop | B     | Functional | API drift resolved via normalization |
+| Codex Desktop  | D     | Functional | Backend + SQLite substitution required |
+| Obsidian       | A     | Functional | Stress test — official Linux build exists |
+| Cursor         | C     | Functional | Stress test — official Linux build exists |
+
+Tiers 1–4 (Darling, QEMU, VM) have established adapter boundaries but are not yet
+implemented. See [ROADMAP.md](../../ROADMAP.md) for the full phase plan.
+
+---
+
+## Design Principles
+
+### Utility Over Purity
+
+The objective is usable application compatibility, not complete operating-system
+emulation. If a native Linux runtime swap achieves the same user outcome as a full
+compatibility layer, runtime substitution is preferred.
+
+### Explicit Degradation Over Silent Failure
+
+Every compatibility compromise is explicit, diagnosable, bounded, reversible, and
+adapter-owned. macRun defines seven degradation categories from Transparent Substitution
+to Hard Failure. No compatibility decision is implicit.
+
+### Asymmetric Strategy by Application Category
+
+Electron apps are not native Cocoa apps. They require different strategies. The platform
+classifies applications into execution tiers and compatibility classes before selecting
+an approach. See [COMPATIBILITY_SPECTRUM.md](../architecture/COMPATIBILITY_SPECTRUM.md)
+for the Class A–D model.
+
+### Linux Is the Primary Environment
+
+macOS runtimes exist only as execution substrates. The platform does not recreate Finder,
+Dock, or the macOS desktop experience. Applications should feel native to Linux, not
+foreign.
+
+---
+
+## Architecture
+
+The platform classifies applications into execution tiers and selects the
+lowest-complexity viable runtime strategy.
+
+```
+macOS .app bundle
     ↓
-Capability Detection
+5-Stage Capability Detection Pipeline
+  1. Bundle inspection (Info.plist, Mach-O headers)
+  2. Framework and dependency probing
+  3. Entitlements analysis
+  4. Capability scoring against compat-db
+  5. Execution tier and compatibility class resolution
     ↓
-Tier Classification
+Adapter dispatch
     ↓
-Execution Strategy Selection
-    ↓
-Native Linux Integration
+Native Linux integration (Wayland, XDG, clipboard, notifications)
 ```
 
-Execution strategies include:
-
-| Tier    | Strategy                                    |
-| ------- | ------------------------------------------- |
-| Tier 0  | Runtime substitution (Electron/Tauri/Wails) |
-| Tier 1  | CLI compatibility via Darling               |
-| Tier 2  | Lightweight Cocoa compatibility             |
-| Tier 3  | ARM64 translation                           |
-| Tier 4B | VM-assisted application streaming           |
-
-The architecture is explicitly hybrid.
+| Tier    | Strategy                                    | Status         |
+|---------|---------------------------------------------|----------------|
+| Tier 0  | Runtime substitution (Electron/Tauri/Wails) | Functional     |
+| Tier 1  | CLI compatibility via Darling               | Phase 5 future |
+| Tier 2  | Lightweight Cocoa compatibility             | Phase 6 future |
+| Tier 3  | ARM64 translation                           | Phase 7 future |
+| Tier 4B | VM-assisted application streaming           | Phase 8 future |
 
 ---
 
-# Core Design Principles
-
-## Utility Over Purity
-
-The objective is:
-
-* usable application compatibility,
-  not:
-* complete operating-system emulation.
-
-If a native Linux runtime swap achieves the same user outcome as full compatibility-layer execution, runtime substitution is preferred.
-
----
-
-## VM-Assisted Execution Is First-Class
-
-Some modern macOS applications depend on:
-
-* Accessibility APIs,
-* system-wide hooks,
-* SwiftUI assumptions,
-* private frameworks,
-* and deep compositor integration.
-
-For these applications, the platform uses:
-
-* lightweight macOS virtual machines,
-* per-window streaming,
-* Linux-native window presentation,
-* clipboard synchronization,
-* notification forwarding,
-* and hotkey bridging.
-
-This model is architecturally similar to WSLg, reversed.
-
----
-
-## Linux Remains the Primary Environment
-
-Linux is always the host environment.
-
-macOS runtimes exist only as:
-
-* execution substrates for macOS applications.
-
-The project does not attempt to recreate:
-
-* Finder,
-* Dock,
-* or the broader macOS desktop experience.
-
----
-
-# Repository Structure
+## Repository Structure
 
 ```
 docs/                     Architecture, design, protocols, compatibility docs
@@ -148,132 +111,65 @@ docs/                     Architecture, design, protocols, compatibility docs
 ├── design/               Per-subsystem design documents
 ├── protocols/            Interface contract definitions and wire formats
 ├── compatibility/        Target application profiles and degradation specs
+├── guides/               Application-specific launch guides
 └── diagrams/             Architecture and data flow diagrams
 
-compat-db/                Compatibility metadata and policies (like ProtonDB)
+compat-db/                Compatibility metadata and policies
 ├── signatures/           Application and framework detection fingerprints
 ├── policies/             Execution strategy mappings and degradation rules
-├── reports/              User-submitted compatibility reports and telemetry
+├── reports/              Validated compatibility reports
 └── manifests/            Runtime version mappings and dependency declarations
 
 platform/                 Application orchestration and capability detection
-├── macrun/               Launcher: .app/.dmg → execution strategy
 ├── detector/             Five-stage capability detection pipeline
-│   ├── bundle/           Stage 1: Info.plist, Mach-O header analysis
-│   ├── framework/        Stage 2: Framework fingerprinting
-│   ├── arch/             Stage 3: x86-64/ARM64 architecture detection
-│   └── scoring/          Stage 4-5: Capability scoring and strategy resolution
+├── adapters/             Substrate adapter implementations
 └── common/               Shared platform types
 
-runtime/                  Execution backends (Tiers 0-3)
-├── shims/                Tier 0: Electron/Tauri runtime substitution
-├── darling/              Tier 1-2: Mach-O loader, syscall compatibility
-├── cocoa/                Tier 2: Lightweight Cocoa compatibility
-├── arm64/                Tier 3: Apple Silicon binary translation
-└── common/               Shared runtime types
+runtime/                  Execution backends (Tier 0 functional)
+├── shims/                Tier 0: Electron/Tauri runtime substitution and normalization
+├── darling/              Tier 1-2: Mach-O loader skeleton
+├── cocoa/                Tier 2: Lightweight Cocoa skeleton
+└── arm64/                Tier 3: ARM64 translation skeleton
 
-vm/                       macOS guest integration (Tier 4B)
-├── bridge/               Guest-side bridge daemon
-├── capture/              Per-window framebuffer capture
-├── encode/               Frame encoding for transport
-├── lifecycle/            VM start/suspend/resume orchestration
-└── virtio/               Host-guest shared transport layer
-
+vm/                       macOS guest integration (Tier 4B — future)
 host/                     Linux-side windowing and UX integration
-├── proxy/                Host proxy: Wayland windows, input, clipboard, audio
-├── wayland/              Wayland surface management
-├── input/                Keyboard, mouse, hotkey forwarding
-├── audio/                Guest-to-host audio routing
-└── integration/          Clipboard, notifications, UX glue
-
-tooling/                  Development and diagnostic utilities
-├── extractor/            DMG and .app bundle extraction
-├── inspector/            Static bundle analysis and capability probing
-├── benchmark/            Performance measurement
-└── devtools/             Debugging and development workflow tools
-
-tests/                    Test suite
-├── unit/                 Subsystem-isolated tests
-├── integration/          Cross-subsystem contract-level tests
-├── compatibility/        Target application compatibility validation
-├── performance/          Latency and throughput benchmarks
-└── fixtures/             Test data: sample .app bundles, DMGs, binaries
-
-third_party/              Vendored dependencies
+tooling/                  macrun-cli, diagnostic tools, bundle inspector
+tests/                    Unit, integration, compatibility, and performance tests
 ```
 
 ---
 
-# Documentation
+## Documentation
 
-| Document                               | Purpose                                       |
-| -------------------------------------- | --------------------------------------------- |
-| `docs/architecture/Architecture_V6.md` | Canonical architecture specification          |
-| `ROADMAP.md`                           | Development milestones and priorities         |
-| `compat-db/`                           | Compatibility metadata and execution policies |
-
----
-
-# Current Priorities
-
-Immediate engineering priorities:
-
-1. Capability detection engine
-2. Runtime orchestration (`macrun`)
-3. Electron runtime substitution
-4. Tauri simple-mode execution
-5. VM-assisted streaming prototype
-6. Compatibility database infrastructure
+| Document                                                  | Status  | Purpose                                              |
+|-----------------------------------------------------------|---------|------------------------------------------------------|
+| [ROADMAP.md](../../ROADMAP.md)                            | Current | Phase status, exit criteria, strategic position      |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                        | Current | Execution tier model, adapter boundaries             |
+| [GOVERNANCE.md](GOVERNANCE.md)                            | Current | Degradation categories, shim governance, diagnostics |
+| [LIMITATIONS.md](LIMITATIONS.md)                         | Current | Validated apps, active limitations, non-goals        |
+| [docs/architecture/ARCHITECTURE_V6.md](../architecture/ARCHITECTURE_V6.md) | Current | Full canonical architecture specification |
+| [docs/architecture/COMPATIBILITY_SPECTRUM.md](../architecture/COMPATIBILITY_SPECTRUM.md) | Current | Class A–D application classification model |
+| [docs/architecture/RUNTIME_NEGOTIATION.md](../architecture/RUNTIME_NEGOTIATION.md) | Current | Substrate version selection governance |
+| [docs/architecture/DEGRADATION_MODEL.md](../architecture/DEGRADATION_MODEL.md) | Current | Degradation categories and escalation logic |
+| [docs/guides/codex/README.md](../guides/codex/README.md) | Current | Step-by-step guide: Codex Desktop on Linux |
 
 ---
 
-# Planned Compatibility Targets
+## Contributing
 
-Initial application targets include:
+Phase 4 is the active development frontier. The highest-impact contribution areas are:
 
-| Category                | Examples                         |
-| ----------------------- | -------------------------------- |
-| AI desktop apps         | Cursor, Claude Desktop, Windsurf |
-| Electron ecosystems     | VS Code derivatives, Obsidian    |
-| Launcher/workflow tools | Raycast, Alfred                  |
-| CLI tooling             | Homebrew, Swift tooling          |
+- **Phase 4A (Active)**: Native module rebuild pipelines (better-sqlite3, node-pty,
+  @vscode/sqlite3), module resolution registry, ABI verification tooling
+- **Phase 4B/4C (Next)**: Electron version capability negotiation, BrowserView
+  rendering reliability, renderer diagnostic tooling
+- **Always useful**: Compatibility database entries, validation reports, Mach-O analysis
+  tooling improvements
 
----
-
-# Non-Goals
-
-The following are intentionally out of scope:
-
-* gaming optimization
-* kernel extension support
-* Hypervisor.framework compatibility
-* complete AppKit parity
-* full SwiftUI correctness
-* App Store integration
-* DRM-heavy applications
-* macOS desktop replication
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full contribution guide.
 
 ---
 
-# Contributing
+## License
 
-The project is currently in architecture formation and infrastructure planning stages.
-
-Contribution areas that will become important early:
-
-* runtime analysis
-* Mach-O tooling
-* Electron/Tauri runtime adaptation
-* Wayland integration
-* VM streaming infrastructure
-* compatibility testing
-* protocol design
-* ARM64 translation research
-
-Contribution guidelines will be formalized as the implementation stabilizes.
-
----
-
-# License
-
-License selection pending initial implementation phase.
+MIT. See [LICENSE](../../LICENSE).
