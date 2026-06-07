@@ -8,15 +8,11 @@ By following this guide, you will compile the required Linux-native SQLite modul
 
 ---
 
-## Screenshots of Successful Execution
+## Screenshot of Successful Execution
 
 Here is Codex Desktop running on Ubuntu 24.04 via the macRun platform under our newly implemented C++ dynamic runtime shims:
 
-### Light Mode Layout
-![Codex in Light Mode](images/codex_light.png)
-
-### Dark Mode Layout
-![Codex in Dark Mode](images/codex_dark.png)
+![Codex Desktop on Linux](images/codex_linux.png)
 
 ---
 
