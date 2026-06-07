@@ -1,0 +1,105 @@
+name: Bug Report
+description: Report a bug or issue within the macRun runtime platform.
+title: "[Bug] <Short description>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Thank you for reporting a bug!
+        
+        Please fill out this form with as much detail as possible to help us diagnose and resolve the issue.
+        
+        **Useful Resources:**
+        * Refer to [LIMITATIONS.md](docs/public/LIMITATIONS.md) or [ARCHITECTURE.md](docs/public/ARCHITECTURE.md) to understand execution tiers and compatibility limits.
+
+  - type: dropdown
+    id: execution_tier
+    attributes:
+      label: Execution Tier
+      description: Which compatibility tier is the application using? See LIMITATIONS.md for definitions.
+      options:
+        - "Tier 0: Substituted Electron Runtime"
+        - "Tier 1: Substituted Native Library"
+        - "Tier 2: Hybrid Emulation Substrate"
+        - "Tier 3: Complete Virtualization fallback"
+        - "Unknown / Unsure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: adapter_subsystem
+    attributes:
+      label: Affected Subsystem / Adapter
+      options:
+        - "ElectronAdapter (Electron runtime launching and management)"
+        - "NativeResolver (Native module/dynamic linker resolver)"
+        - "ProcessOrchestrator (Distributed process / client-server execution)"
+        - "Preload Shims (process.dlopen/ELECTRON_API normalizations)"
+        - "Substrate (Chromium compositor, views, windowing)"
+        - "Build System / Tooling"
+        - "Other"
+    validations:
+      required: true
+
+  - type: input
+    id: app_info
+    attributes:
+      label: Target Application Name & Version
+      placeholder: e.g. Claude Desktop (v0.7.0)
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Reproduction Steps
+      placeholder: |
+        1. Run macRun launch command...
+        2. Perform actions...
+        3. Observe issue...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      placeholder: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual Behavior
+      placeholder: What actually happened? (e.g. blank screen, specific crash)
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic Output
+      description: |
+        Please run the application with diagnostics enabled and paste the logs.
+        Specifically, provide the output generated when using `MACRUN_DIAG_RENDERER` and `MACRUN_DIAG_MAIN` environment variables.
+      placeholder: Paste terminal logs or debug outputs here.
+    validations:
+      required: false
+
+  - type: input
+    id: host_info
+    attributes:
+      label: Linux Distribution & Kernel
+      placeholder: e.g. Ubuntu 24.04, Kernel 6.8.0-31-generic
+    validations:
+      required: true
+
+  - type: input
+    id: macrun_version
+    attributes:
+      label: macRun Version / Commit Hash
+      placeholder: e.g. v0.4.0 or git commit sha
+    validations:
+      required: true

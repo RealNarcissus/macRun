@@ -1,0 +1,97 @@
+name: Compatibility Report
+description: Report the compatibility of a macOS application running on macRun.
+title: "[Compat] <App Name> - <Version>"
+labels: ["compatibility-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Thank you for contributing a compatibility report!
+        
+        Even if you did not write a code fix, documenting what works and what does not is highly valuable to the community.
+        
+        **Useful Resources:**
+        * Refer to the [Compatibility Spectrum Guide](docs/architecture/COMPATIBILITY_SPECTRUM.md) to classify the application's architecture.
+        * To submit a formal JSON report to the database, follow the schema guide in [compat-db/README.md](compat-db/README.md).
+
+  - type: input
+    id: app_name
+    attributes:
+      label: Application Name
+      placeholder: e.g. Obsidian, Claude Desktop
+    validations:
+      required: true
+
+  - type: input
+    id: app_version
+    attributes:
+      label: Application Version
+      placeholder: e.g. 1.5.8
+    validations:
+      required: true
+
+  - type: dropdown
+    id: arch_class
+    attributes:
+      label: Architecture Class
+      description: Refer to [COMPATIBILITY_SPECTRUM.md](docs/architecture/COMPATIBILITY_SPECTRUM.md) for detailed definitions.
+      options:
+        - "Class A: Self-Contained Electron App"
+        - "Class B: Electron App with API Drift"
+        - "Class C: IDE-Class Electron Platform"
+        - "Class D: Client-Server Electron Platform"
+        - "Unknown / Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: comp_state
+    attributes:
+      label: Compatibility State
+      options:
+        - "Functional (App works fully with no major issues)"
+        - "Partial (Core features work, but minor bugs/missing features exist)"
+        - "Degraded (App runs but significant features are broken or slow)"
+        - "Broken (App crashes or fails to render entirely)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: works
+    attributes:
+      label: What Works
+      placeholder: Describe the features, workflows, and UI paths that work correctly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: broken
+    attributes:
+      label: What is Broken or Requires Workarounds
+      placeholder: List any bugs, rendering glitches, crashes, or features that fail to function.
+    validations:
+      required: true
+
+  - type: textarea
+    id: flags_env
+    attributes:
+      label: Required Flags and Environment Variables
+      placeholder: e.g. MACRUN_ELECTRON_VERSION=28 or custom CLI flags needed to launch.
+    validations:
+      required: false
+
+  - type: textarea
+    id: native_modules
+    attributes:
+      label: Native Modules Needing Compilation
+      placeholder: List any `.node` native modules that required native Linux compilation/substitutes (if known).
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      placeholder: Any other context, performance observations, log snippets, or screenshots you want to share.
+    validations:
+      required: false

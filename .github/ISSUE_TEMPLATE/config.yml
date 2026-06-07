@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Compatibility Database Contributions
+    url: https://github.com/macrun-org/macrun/blob/main/compat-db/README.md
+    about: Read how to contribute formal JSON compatibility reports directly to our compatibility database (compat-db).
+  - name: Contributing Guide
+    url: https://github.com/macrun-org/macrun/blob/main/CONTRIBUTING.md
+    about: Review our architecture-first contributing guidelines before writing code.
