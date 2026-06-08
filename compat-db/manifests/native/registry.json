@@ -1,0 +1,74 @@
+{
+  "$schema": "./native-registry.schema.json",
+  "schema_version": "1.0.0",
+  "description": "Governed native module replacement registry for Electron Tier 0 runtime substitution",
+  "architecture_reference": "docs/architecture/Native Module Compatibility Infrastructure Plan v3",
+  "entries": {
+    "better-sqlite3": {
+      "module_name": "better-sqlite3",
+      "description": "SQLite3 binding — most common Electron persistence engine. Critical for Class C/D apps.",
+      "stub_policy": "never_stub",
+      "common_role": "state-database",
+      "governed_versions": {
+        "12.10.0": {
+          "npm_version": "12.10.0",
+          "sha256": "",
+          "electron_abi": { "node_module_version": 131, "electron_versions": ["42"] },
+          "build_flags": [],
+          "build_env": {},
+          "known_good": false,
+          "patches": ["better-sqlite3-12.10.0-v8-13-external.patch", "better-sqlite3-12.10.0-setnativedataproperty.patch"],
+          "known_bad_on": [],
+          "validated_on": []
+        },
+        "9.6.0": {
+          "npm_version": "9.6.0",
+          "sha256": "",
+          "electron_abi": { "node_module_version": 130, "electron_versions": ["41", "38"] },
+          "build_flags": [],
+          "build_env": {},
+          "known_good": false,
+          "patches": [],
+          "known_bad_on": [{"electron_major": 42, "reason": "V8 13 API drift"}],
+          "validated_on": []
+        }
+      }
+    },
+    "get-fonts": {
+      "module_name": "get-fonts",
+      "description": "macOS system font enumeration. Cosmetic module — safe to stub.",
+      "stub_policy": "always_stub",
+      "common_role": "system-binding",
+      "governed_versions": {}
+    },
+    "btime": {
+      "module_name": "btime",
+      "description": "macOS boot time query. Cosmetic module — safe to stub.",
+      "stub_policy": "always_stub",
+      "common_role": "system-binding",
+      "governed_versions": {}
+    },
+    "node-pty": {
+      "module_name": "node-pty",
+      "description": "Pseudoterminal spawner — critical for interactive terminal shells in editors.",
+      "stub_policy": "never_stub",
+      "common_role": "terminal-pty",
+      "governed_versions": {
+        "1.1.0": {
+          "npm_version": "1.1.0",
+          "sha256": "",
+          "electron_abi": { "node_module_version": 118, "electron_versions": ["28"] },
+          "build_flags": [],
+          "build_env": {},
+          "dependencies": {
+            "node-addon-api": "7.1.1"
+          },
+          "known_good": true,
+          "patches": [],
+          "known_bad_on": [],
+          "validated_on": []
+        }
+      }
+    }
+  }
+}

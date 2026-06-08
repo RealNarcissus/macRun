@@ -84,4 +84,12 @@
             console.error('[macrun-shim] renderer-diag failed:', e.message);
         }
     }
+
+    if (process.env.MACRUN_SHIM_NATIVE_LOADER === '1') {
+        try {
+            require('./native-module-loader');
+        } catch (e) {
+            console.error('[macrun-shim] native-module-loader failed:', e.message);
+        }
+    }
 })();

@@ -189,6 +189,58 @@ ValidationResult validate_state_transitions(const CompatibilityRecord& rec) {
         }
     }
 
+    // === Phase 4B: Architecture class validation rules ===
+
+    // Rule: Class C or D must declare critical_native_modules
+    if (rec.architecture_class.has_value()) {
+        auto ac = *rec.architecture_class;
+        if ((ac == ArchitectureClass::ClassC || ac == ArchitectureClass::ClassD) &&
+            rec.critical_native_modules.empty()) {
+            err("critical_native_modules",
+                "architecture_class '" + std::string(arch_class_to_string(ac)) +
+                "' should declare at least one critical_native_module",
+                VLevel::Warning);
+        }
+
+        // Rule: external_processes should only appear on Class D
+        if (!rec.external_processes.empty() && ac != ArchitectureClass::ClassD) {
+            err("external_processes",
+                "External processes declared but architecture_class is '" +
+                std::string(arch_class_to_string(ac)) + "' (should be class_d)",
+                VLevel::Warning);
+        }
+
+        // Rule: Class D should declare at least one external_process
+        if (ac == ArchitectureClass::ClassD && rec.external_processes.empty()) {
+            err("external_processes",
+                "architecture_class 'class_d' should declare external_processes",
+                VLevel::Warning);
+        }
+    } else {
+        // If architecture_class is missing but external_processes or critical_native_modules exist,
+        // the record predates the schema extension — emit informational warning
+        if (!rec.external_processes.empty() || !rec.critical_native_modules.empty()) {
+            err("architecture_class",
+                "Record has native module data but no architecture_class field — "
+                "consider adding one for classification accuracy",
+                VLevel::Warning);
+        }
+    }
+
+    // Rule: runtime_policy minimum must not exceed first preferred version
+    if (rec.runtime_policy.has_value() && !rec.runtime_policy->minimum.empty() &&
+        !rec.runtime_policy->preferred.empty()) {
+        // Simple semver comparison: compare as strings digit-by-digit
+        // If minimum > preferred[0], that's an error
+        const auto& min_ver = rec.runtime_policy->minimum;
+        const auto& pref_ver = rec.runtime_policy->preferred[0];
+        if (min_ver > pref_ver) {
+            err("runtime_policy",
+                "minimum version '" + min_ver + "' exceeds preferred version '" + pref_ver + "'",
+                VLevel::Error);
+        }
+    }
+
     return result;
 }
 

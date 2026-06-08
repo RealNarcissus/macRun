@@ -2,8 +2,11 @@
 #include <compatdb/types.hpp>
 #include <compatdb/validator.hpp>
 #include <compatdb/database.hpp>
+#include <compatdb/native_registry.hpp>
 #include <iostream>
+#include <fstream>
 #include <cassert>
+#include <unistd.h>
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -217,6 +220,60 @@ static void test_state_transition_hard_failure_requires_broken() {
     PASS();
 }
 
+static void test_native_registry_fallback() {
+    TEST("NativeRegistry finds replacement with ABI checks and known_bad filtering");
+    
+    // Write mock registry file
+    std::string tmp_reg = "/tmp/mock-native-registry.json";
+    std::ofstream out(tmp_reg);
+    out << R"({
+      "schema_version": "1.0.0",
+      "entries": {
+        "test-module": {
+          "module_name": "test-module",
+          "stub_policy": "never_stub",
+          "common_role": "state-database",
+          "governed_versions": {
+            "2.0.0": {
+              "npm_version": "2.0.0",
+              "electron_abi": { "node_module_version": 118, "electron_versions": ["28"] },
+              "known_good": true
+            },
+            "1.0.0": {
+              "npm_version": "1.0.0",
+              "electron_abi": { "node_module_version": 110, "electron_versions": ["24"] },
+              "known_good": false,
+              "known_bad_on": [{"electron_major": 28, "reason": "Failed test"}]
+            }
+          }
+        }
+      }
+    })";
+    out.close();
+
+    compatdb::NativeRegistry reg;
+    CHECK(reg.load(tmp_reg), "Should load mock registry");
+
+    // Test 1: Exact match
+    auto r1 = reg.find_replacement("test-module", "28.0.0", "x86_64");
+    CHECK(r1.has_value(), "Should find replacement for major 28");
+    CHECK(r1->npm_version == "2.0.0", "Should exact match to 2.0.0");
+
+    // Test 2: Known bad filtering
+    auto r2 = reg.find_replacement("test-module", "24.0.0", "x86_64");
+    CHECK(r2.has_value(), "Should find replacement for major 24");
+    CHECK(r2->npm_version == "1.0.0", "Should exact match to 1.0.0");
+
+    // Test 3: Closest ABI delta resolution
+    auto r3 = reg.find_replacement("test-module", "30.0.0", "x86_64");
+    CHECK(r3.has_value(), "Should resolve closest ABI delta");
+    CHECK(r3->npm_version == "2.0.0", "2.0.0 is closer to ABI 120 than 1.0.0");
+
+    // Clean up
+    unlink(tmp_reg.c_str());
+    PASS();
+}
+
 
 int main() {
     std::cout << "\n=== Compat-DB Unit Tests ===\n\n";
@@ -233,6 +290,7 @@ int main() {
     test_degradation_metadata_validation();
     test_state_transition_unsafe_cannot_be_verified();
     test_state_transition_hard_failure_requires_broken();
+    test_native_registry_fallback();
 
     std::cout << "\n=== Results: " << tests_passed << " passed, "
               << tests_failed << " failed ===\n";

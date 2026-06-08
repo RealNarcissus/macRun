@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <map>
 #include <optional>
 
 namespace compatdb {
@@ -18,7 +19,7 @@ namespace compatdb {
 // ============================================================
 // Schema version
 // ============================================================
-constexpr std::string_view CURRENT_SCHEMA_VERSION = "1.0.0";
+constexpr std::string_view CURRENT_SCHEMA_VERSION = "1.1.0";
 
 // ============================================================
 // Execution Tier (mirrors platform::ExecutionTier, isolated here)
@@ -170,6 +171,81 @@ struct ContributorInfo {
 };
 
 // ============================================================
+// Architecture class per COMPATIBILITY_SPECTRUM.md
+// ============================================================
+enum class ArchitectureClass : uint8_t {
+    ClassA = 0,  // Self-contained, no native dependencies
+    ClassB = 1,  // API drift requiring normalization
+    ClassC = 2,  // Native module compilation required
+    ClassD = 3,  // External backend substitution required
+};
+
+constexpr std::string_view arch_class_to_string(ArchitectureClass c) {
+    switch (c) {
+        case ArchitectureClass::ClassA: return "class_a";
+        case ArchitectureClass::ClassB: return "class_b";
+        case ArchitectureClass::ClassC: return "class_c";
+        case ArchitectureClass::ClassD: return "class_d";
+    }
+    return "unknown";
+}
+
+constexpr ArchitectureClass arch_class_from_string(std::string_view s) {
+    if (s == "class_a") return ArchitectureClass::ClassA;
+    if (s == "class_b") return ArchitectureClass::ClassB;
+    if (s == "class_c") return ArchitectureClass::ClassC;
+    if (s == "class_d") return ArchitectureClass::ClassD;
+    return ArchitectureClass::ClassA;
+}
+
+// ============================================================
+// Native module tracking per Phase 4B Native ABI Compatibility
+// ============================================================
+struct CriticalNativeModule {
+    std::string module;              // npm module name (e.g. "better-sqlite3")
+    std::string role;                // architectural role (e.g. "state-database")
+    bool requires_compilation = false;
+};
+
+struct ExternalProcess {
+    std::string name;                // process/executable name
+    std::string type;                // "backend-server" | "plugin-host" | "sidecar" | "language-server"
+    std::string protocol;            // "stdio-mcp" | "http" | "grpc" | "unix-socket"
+    std::string binary_type;         // "mach-o-arm64" | "mach-o-x86_64" | "elf-x86_64"
+    std::string substitution_env;    // env var for Linux-native replacement path
+};
+
+struct RuntimePolicy {
+    std::vector<std::string> preferred;   // preferred Electron versions (desc priority)
+    std::string minimum;                   // minimum acceptable version
+    std::vector<std::string> validated;   // versions validated against this app
+    std::vector<std::string> fallback;    // fallback versions
+};
+
+struct KnownBadEntry {
+    uint32_t electron_major = 0;
+    std::string reason;
+};
+
+// ============================================================
+// Native replacement record — returned by NativeRegistry::find_replacement()
+// Owned by compat-db’s data layer per dependency direction.
+// ============================================================
+struct NativeReplacementRecord {
+    std::string module_name;
+    std::string npm_version;
+    std::string sha256;
+    uint32_t required_nmv = 0;
+    std::vector<std::string> build_flags;
+    std::map<std::string, std::string> build_env;
+    bool known_good = false;
+    std::vector<std::string> patches;
+    std::vector<KnownBadEntry> known_bad_on;
+    std::string shim_type;
+    std::map<std::string, std::string> dependencies;
+};
+
+// ============================================================
 // Degradation metadata — per DEGRADATION_MODEL.md
 // ============================================================
 struct DegradationMetadata {
@@ -228,6 +304,12 @@ struct CompatibilityRecord {
 
     // Key-value flags (e.g. {"ELECTRON_RUNTIME": "28", "DISABLE_GPU": "1"})
     std::vector<std::pair<std::string, std::string>> required_flags;
+
+    // === Phase 4B: Native ABI Compatibility fields ===
+    std::optional<ArchitectureClass> architecture_class;
+    std::vector<CriticalNativeModule> critical_native_modules;
+    std::vector<ExternalProcess> external_processes;
+    std::optional<RuntimePolicy> runtime_policy;
 };
 
 // ============================================================

@@ -181,6 +181,56 @@ static CompatibilityRecord parse_record(const json& j, const std::string& source
         if (!dm.category.empty()) rec.degradation = dm;
     }
 
+    // === Phase 4B: Architecture class (optional, default ClassA) ===
+    auto ac = json_opt_string(j, "architecture_class");
+    if (!ac.empty()) rec.architecture_class = arch_class_from_string(ac);
+
+    // === Phase 4B: Critical native modules ===
+    auto cnm_it = j.find("critical_native_modules");
+    if (cnm_it != j.end() && cnm_it->is_array()) {
+        for (const auto& m : *cnm_it) {
+            CriticalNativeModule cnm;
+            cnm.module               = json_opt_string(m, "module");
+            cnm.role                 = json_opt_string(m, "role");
+            cnm.requires_compilation = json_opt_bool(m, "requires_compilation");
+            if (!cnm.module.empty()) rec.critical_native_modules.push_back(cnm);
+        }
+    }
+
+    // === Phase 4B: External processes ===
+    auto ep_it = j.find("external_processes");
+    if (ep_it != j.end() && ep_it->is_array()) {
+        for (const auto& p : *ep_it) {
+            ExternalProcess ep;
+            ep.name              = json_opt_string(p, "name");
+            ep.type              = json_opt_string(p, "type");
+            ep.protocol          = json_opt_string(p, "protocol");
+            ep.binary_type       = json_opt_string(p, "binary_type");
+            ep.substitution_env  = json_opt_string(p, "substitution_env");
+            if (!ep.name.empty()) rec.external_processes.push_back(ep);
+        }
+    }
+
+    // === Phase 4B: Runtime policy ===
+    auto rp_it = j.find("runtime_policy");
+    if (rp_it != j.end() && rp_it->is_object()) {
+        RuntimePolicy rp;
+        rp.minimum    = json_opt_string(*rp_it, "minimum");
+        auto pref = rp_it->find("preferred");
+        if (pref != rp_it->end() && pref->is_array()) {
+            for (const auto& v : *pref) { if (v.is_string()) rp.preferred.push_back(v.get<std::string>()); }
+        }
+        auto val = rp_it->find("validated");
+        if (val != rp_it->end() && val->is_array()) {
+            for (const auto& v : *val) { if (v.is_string()) rp.validated.push_back(v.get<std::string>()); }
+        }
+        auto fb = rp_it->find("fallback");
+        if (fb != rp_it->end() && fb->is_array()) {
+            for (const auto& v : *fb) { if (v.is_string()) rp.fallback.push_back(v.get<std::string>()); }
+        }
+        if (!rp.preferred.empty() || !rp.minimum.empty()) rec.runtime_policy = rp;
+    }
+
     return rec;
 }
 
@@ -305,6 +355,59 @@ static json serialize_record(const CompatibilityRecord& rec) {
         if (!d.bypassed_modules.empty()) dm["bypassed_modules"] = d.bypassed_modules;
         if (!d.experimental_features.empty()) dm["experimental_features"] = d.experimental_features;
         j["degradation"] = dm;
+    }
+
+    // === Phase 4B: New schema v1.1.0 fields ===
+    if (rec.architecture_class.has_value()) {
+        j["architecture_class"] = arch_class_to_string(*rec.architecture_class);
+    }
+
+    if (!rec.critical_native_modules.empty()) {
+        json cnms = json::array();
+        for (const auto& cnm : rec.critical_native_modules) {
+            json m;
+            m["module"] = cnm.module;
+            m["role"] = cnm.role;
+            m["requires_compilation"] = cnm.requires_compilation;
+            cnms.push_back(m);
+        }
+        j["critical_native_modules"] = cnms;
+    }
+
+    if (!rec.external_processes.empty()) {
+        json eps = json::array();
+        for (const auto& ep : rec.external_processes) {
+            json p;
+            p["name"] = ep.name;
+            p["type"] = ep.type;
+            if (!ep.protocol.empty()) p["protocol"] = ep.protocol;
+            if (!ep.binary_type.empty()) p["binary_type"] = ep.binary_type;
+            if (!ep.substitution_env.empty()) p["substitution_env"] = ep.substitution_env;
+            eps.push_back(p);
+        }
+        j["external_processes"] = eps;
+    }
+
+    if (rec.runtime_policy.has_value()) {
+        json rp;
+        const auto& r = *rec.runtime_policy;
+        if (!r.minimum.empty()) rp["minimum"] = r.minimum;
+        if (!r.preferred.empty()) {
+            json pref = json::array();
+            for (const auto& v : r.preferred) pref.push_back(v);
+            rp["preferred"] = pref;
+        }
+        if (!r.validated.empty()) {
+            json val = json::array();
+            for (const auto& v : r.validated) val.push_back(v);
+            rp["validated"] = val;
+        }
+        if (!r.fallback.empty()) {
+            json fb = json::array();
+            for (const auto& v : r.fallback) fb.push_back(v);
+            rp["fallback"] = fb;
+        }
+        j["runtime_policy"] = rp;
     }
 
     return j;

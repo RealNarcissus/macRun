@@ -53,6 +53,11 @@
       "module": "better-sqlite3",
       "role": "state-database",
       "requires_compilation": true
+    },
+    {
+      "module": "node-pty",
+      "role": "terminal-pty",
+      "requires_compilation": true
     }
   ],
   "runtime_policy": {
@@ -61,7 +66,9 @@
     "validated": [],
     "fallback": ["28"]
   },
-  "required_flags": {},
+  "required_flags": {
+    "MACRUN_ELECTRON_VERSION": "28.3.3"
+  },
   "tags": ["electron", "ai-tool", "editor", "client-server", "rebranded-framework"],
   "notes": "Launches and renders via Electron 28 runtime substitution with rendering anomalies. Rebranded Electron framework requires detection overrides. CLI backend requires Linux-native binary substitution. Rendering issues likely resolvable via Electron 41 substrate (see RUNTIME_NEGOTIATION.md)."
 }

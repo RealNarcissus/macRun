@@ -7,30 +7,35 @@
       "exact": "22.3.27",
       "status": "supported",
       "macos_equivalent": "Electron 22",
+      "node_module_version": 108,
       "cache_path": "~/.cache/macrun/electron/electron-22.3.27"
     },
     "24.x": {
       "exact": "24.8.8",
       "status": "supported",
       "macos_equivalent": "Electron 24",
+      "node_module_version": 110,
       "cache_path": "~/.cache/macrun/electron/electron-24.8.8"
     },
     "28.x": {
       "exact": "28.3.3",
       "status": "recommended",
       "macos_equivalent": "Electron 28",
+      "node_module_version": 118,
       "cache_path": "~/.cache/macrun/electron/electron-28.3.3"
     },
     "41.x": {
       "exact": "41.7.1",
       "status": "supported",
       "macos_equivalent": "Electron 41",
+      "node_module_version": 130,
       "cache_path": "~/.cache/macrun/electron/electron-41.7.1"
     },
     "42.x": {
       "exact": "42.3.3",
       "status": "supported",
       "macos_equivalent": "Electron 42",
+      "node_module_version": 131,
       "cache_path": "~/.cache/macrun/electron/electron-42.3.3"
     }
   },

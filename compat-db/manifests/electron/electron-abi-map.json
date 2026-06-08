@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Electron version → NODE_MODULE_VERSION mapping for native module ABI compatibility verification",
+  "architecture_reference": "docs/architecture/RUNTIME_NEGOTIATION.md — ABI Governance section",
+  "abi_map": {
+    "22": { "node_module_version": 108, "node_version": "16.17.1", "v8_version": "10.8" },
+    "24": { "node_module_version": 110, "node_version": "18.14.0", "v8_version": "11.0" },
+    "28": { "node_module_version": 118, "node_version": "18.18.2", "v8_version": "11.8" },
+    "30": { "node_module_version": 120, "node_version": "20.11.0", "v8_version": "12.4" },
+    "32": { "node_module_version": 122, "node_version": "20.14.0", "v8_version": "12.6" },
+    "34": { "node_module_version": 124, "node_version": "20.16.0", "v8_version": "12.8" },
+    "38": { "node_module_version": 128, "node_version": "22.3.0",  "v8_version": "12.9" },
+    "41": { "node_module_version": 130, "node_version": "22.12.0", "v8_version": "13.2" },
+    "42": { "node_module_version": 131, "node_version": "22.14.0", "v8_version": "13.4" }
+  },
+  "compatibility_rules": {
+    "exact_match_only": true,
+    "forward_compat": false,
+    "backward_compat": false,
+    "reason": "NODE_MODULE_VERSION is a breaking ABI marker. One-unit mismatch = undefined behavior."
+  }
+}

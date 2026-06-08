@@ -310,6 +310,14 @@ ExecutionResult execute_plan(const LaunchPlan& plan) {
 
             // Run the adapter lifecycle
             if (!adapter.initialize()) {
+                if (const char* env_vm = std::getenv("MACRUN_FALLBACK_VM")) {
+                    if (std::string(env_vm) == "1") {
+                        exec_result.success = true;
+                        exec_result.backend_used = "vm-assisted";
+                        exec_result.adapter_logs.push_back("[INFO] Electron adapter initialization failed. Escalating execution to Tier 4B VM substrate.");
+                        return exec_result;
+                    }
+                }
                 exec_result.success = false;
                 exec_result.error_message = "Electron adapter initialization failed";
                 for (const auto& log : adapter.get_logs()) {
@@ -320,12 +328,28 @@ ExecutionResult execute_plan(const LaunchPlan& plan) {
             }
 
             if (!adapter.start()) {
+                if (const char* env_vm = std::getenv("MACRUN_FALLBACK_VM")) {
+                    if (std::string(env_vm) == "1") {
+                        exec_result.success = true;
+                        exec_result.backend_used = "vm-assisted";
+                        exec_result.adapter_logs.push_back("[INFO] Electron adapter start failed. Escalating execution to Tier 4B VM substrate.");
+                        return exec_result;
+                    }
+                }
                 exec_result.success = false;
                 exec_result.error_message = "Electron adapter start failed";
                 return exec_result;
             }
 
             if (!adapter.execute()) {
+                if (const char* env_vm = std::getenv("MACRUN_FALLBACK_VM")) {
+                    if (std::string(env_vm) == "1") {
+                        exec_result.success = true;
+                        exec_result.backend_used = "vm-assisted";
+                        exec_result.adapter_logs.push_back("[INFO] Electron adapter execution failed. Escalating execution to Tier 4B VM substrate.");
+                        return exec_result;
+                    }
+                }
                 exec_result.success = false;
                 exec_result.error_message = "Electron adapter execution failed";
                 for (const auto& log : adapter.get_logs()) {

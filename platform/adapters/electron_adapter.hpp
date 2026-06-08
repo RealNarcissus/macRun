@@ -16,9 +16,17 @@
 
 #pragma once
 #include "IElectronAdapter.hpp"
+#include <native/native_types.hpp>
+#include <native/native_abi_db.hpp>
+#include <native/native_discovery.hpp>
+#include <native/native_cache.hpp>
+#include <compatdb/types.hpp>
+#include <compatdb/database.hpp>
+#include <compatdb/native_registry.hpp>
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <map>
 #include <unistd.h>
 
 namespace platform::adapters {
@@ -140,6 +148,22 @@ private:
     std::string degradation_confidence_ = "verified";
     std::vector<std::string> degradation_events_;  // structured diagnostic entries
     bool native_module_bypass_active_ = false;
+
+    // === Phase 4B: Native Module Compatibility ===
+    // All native module logic lives inside the adapter boundary.
+    // Detector and orchestrator are entirely unaware of these.
+    platform::native::ABIDatabase abi_db_;
+    compatdb::NativeRegistry native_registry_;
+    compatdb::CompatDatabase compatdb_;           // for cross-referencing compat-db records
+    platform::native::NativeSubstitutionPlan native_plan_;
+    std::string provisioning_message_;           // set if requires_provisioning
+    bool native_modules_staged_ = false;
+    std::map<std::string, std::string> staged_substitution_map_;  // module_name → .node path
+
+    // Native module lifecycle (all adapter-private)
+    void scan_and_plan_native_modules();
+    bool stage_native_substitutions();
+    std::string build_provisioning_message() const;
 
     // Mock controls (false = real probes in production)
     bool use_mocks_ = false;

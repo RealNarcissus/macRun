@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <thread>
+#include <json.hpp>
 
 namespace fs = std::filesystem;
 
@@ -419,6 +420,12 @@ std::string ElectronAdapter::resolve_runtime_binary() {
         strategy = "fallback";
     }
 
+    std::string version_num = version_to_use;
+    if (version_num.rfind("electron-", 0) == 0) {
+        version_num = version_num.substr(9);
+    }
+    resolved_version_ = version_num;
+
     std::cerr << "[MACRUN:SUBSTRATE] app=" << (bundle_id_.empty() ? "unknown" : bundle_id_)
               << " detected_version=" << (resolved_version_.empty() ? "unknown" : resolved_version_)
               << " selected_runtime=" << version_to_use
@@ -619,6 +626,158 @@ bool ElectronAdapter::detect_native_modules(const std::string& app_dir) {
 }
 
 // ============================================================
+// Phase 4B: Native Module Compatibility — Lifecycle Methods
+// ============================================================
+
+void ElectronAdapter::scan_and_plan_native_modules() {
+    if (!file_exists(extracted_app_dir_)) return;
+
+    auto modules = platform::native::scan_native_modules(extracted_app_dir_);
+    if (modules.empty()) return;
+
+    auto records = compatdb_.lookup_by_bundle_id(bundle_id_);
+    if (!records.empty()) {
+        platform::native::classify_criticality(modules, records[0].record);
+    }
+
+    auto abi = abi_db_.resolve(resolved_version_);
+
+    for (auto& mod : modules) {
+        // ELF modules are already Linux-native
+        if (mod.magic == 0x7F454C46) continue;
+
+        auto abi_status = abi_db_.verify(mod, abi);
+        auto replacement = native_registry_.find_replacement(
+            mod.module_name, resolved_version_, "x86_64");
+
+        platform::native::SubstitutionEntry entry;
+        entry.module_name = mod.module_name;
+        entry.dest_path = mod.path;
+
+        if (native_registry_.is_always_stub(mod.module_name)) {
+            entry.action = platform::native::SubstitutionAction::STUB;
+            entry.risk_class = platform::native::NativeModuleRiskClass::REGISTRY_STUBBED;
+        } else if (replacement) {
+            if (replacement->shim_type == "napi") {
+                std::string home;
+                if (const char* h = std::getenv("HOME")) home = h;
+                std::string shim_path = home + "/.cache/macrun/shims/" + mod.module_name + ".node";
+                if (!file_exists(shim_path)) {
+                    shim_path = "./platform/native/shims/" + mod.module_name + ".node";
+                }
+
+                if (file_exists(shim_path)) {
+                    entry.action = platform::native::SubstitutionAction::CACHED;
+                    entry.source_path = shim_path;
+                    entry.risk_class = platform::native::NativeModuleRiskClass::REGISTRY_CACHED;
+                    log("INFO", "Matching N-API shim found for " + mod.module_name);
+                } else {
+                    log("WARN", "N-API shim requested but binary not found for " + mod.module_name + ", falling back to build");
+                    goto fallback_to_build;
+                }
+            } else {
+            fallback_to_build:
+                auto cache_key = platform::native::compute_cache_key(
+                    mod.module_name, replacement->npm_version,
+                    resolved_version_, "x86_64");
+
+                std::string home;
+                if (const char* h = std::getenv("HOME")) home = h;
+                std::string cache_root = home + "/.cache/macrun/native";
+                auto cache_result = platform::native::probe_cache(cache_root, cache_key);
+
+                if (cache_result.hit) {
+                    entry.action = platform::native::SubstitutionAction::CACHED;
+                    entry.source_path = cache_result.binary_path;
+                    entry.risk_class = platform::native::NativeModuleRiskClass::REGISTRY_CACHED;
+                } else {
+                    entry.action = platform::native::SubstitutionAction::PROVISION_NEEDED;
+                    entry.risk_class = platform::native::NativeModuleRiskClass::REGISTRY_BUILDABLE;
+                    native_plan_.requires_provisioning = true;
+                    native_plan_.provisioning_modules.push_back(mod.module_name);
+                }
+            }
+        } else {
+            entry.action = platform::native::SubstitutionAction::STUB;
+            entry.risk_class = platform::native::NativeModuleRiskClass::UNKNOWN_STUBBED;
+        }
+
+        // Emit diagnostic per module
+        log("INFO", std::string("[MACRUN:NATIVE_MODULE] module=") + entry.module_name +
+            " action=" + std::string(substitution_action_to_string(entry.action)) +
+            " risk=" + std::string(risk_class_to_string(entry.risk_class)));
+
+        native_plan_.entries.push_back(std::move(entry));
+    }
+
+    // Tally counts
+    for (const auto& e : native_plan_.entries) {
+        switch (e.action) {
+            case platform::native::SubstitutionAction::CACHED: native_plan_.cached_count++; break;
+            case platform::native::SubstitutionAction::STUB: native_plan_.stubbed_count++; break;
+            case platform::native::SubstitutionAction::BYPASS: native_plan_.bypassed_count++; break;
+            case platform::native::SubstitutionAction::PROVISION_NEEDED: native_plan_.provision_needed_count++; break;
+            default: break;
+        }
+    }
+
+    if (!native_plan_.entries.empty()) {
+        record_degradation("shimmed", "functional", "native_module_substitution",
+            std::to_string(native_plan_.entries.size()) + " native modules substituted");
+    }
+}
+
+bool ElectronAdapter::stage_native_substitutions() {
+    if (native_plan_.entries.empty()) return true;
+
+    for (const auto& entry : native_plan_.entries) {
+        if (entry.action == platform::native::SubstitutionAction::CACHED) {
+            std::string dest = entry.dest_path;
+            std::error_code ec;
+            fs::create_directories(fs::path(dest).parent_path(), ec);
+            if (ec) {
+                log("ERROR", "Failed to create staging directory for " + entry.module_name);
+                return false;
+            }
+
+            platform::native::CacheResult cached;
+            cached.hit = true;
+            cached.binary_path = entry.source_path;
+            if (!platform::native::stage_from_cache(cached, dest)) {
+                log("ERROR", "Failed to stage cached module: " + entry.module_name);
+                return false;
+            }
+            staged_substitution_map_[entry.module_name] = dest;
+            log("INFO", "Staged cached native module: " + entry.module_name + " → " + dest);
+        }
+    }
+
+    if (!staged_substitution_map_.empty()) {
+        native_modules_staged_ = true;
+    }
+
+    return true;
+}
+
+std::string ElectronAdapter::build_provisioning_message() const {
+    std::ostringstream msg;
+    msg << "[FATAL] Native module substitution required.\n";
+    for (const auto& mod_name : native_plan_.provisioning_modules) {
+        msg << "  Module: " << mod_name << " (critical: "
+            << "state-database" << ")\n";
+    }
+    msg << "  Required Electron ABI: " << resolved_version_ << "\n";
+    msg << "  Cache status: MISS\n";
+    msg << "  Action: Run 'macrun provision <app_path>' to compile the missing module(s).\n";
+    msg << "  Modules requiring provisioning: ";
+    for (size_t i = 0; i < native_plan_.provisioning_modules.size(); i++) {
+        if (i > 0) msg << ", ";
+        msg << native_plan_.provisioning_modules[i];
+    }
+    return msg.str();
+}
+
+// ============================================================
 // Command line building
 // ============================================================
 
@@ -734,6 +893,15 @@ std::vector<std::string> ElectronAdapter::build_child_environment() {
         if (!extracted_app_dir_.empty()) {
             overrides.push_back("MACRUN_EXTRACTED_APP_DIR=" + extracted_app_dir_);
         }
+    }
+
+    if (native_modules_staged_) {
+        overrides.push_back("MACRUN_SHIM_NATIVE_LOADER=1");
+        nlohmann::json sub_map = nlohmann::json::object();
+        for (const auto& [k, v] : staged_substitution_map_) {
+            sub_map[k] = v;
+        }
+        overrides.push_back("MACRUN_NATIVE_SUBSTITUTION_MAP=" + sub_map.dump());
     }
 
     std::string home;
@@ -1091,6 +1259,37 @@ bool ElectronAdapter::execute() {
         log("INFO", "No ASAR path set. Using current directory as app root.");
     }
 
+    // Phase 4B: Native module scanning (post-ASAR-extraction, adapter-owned)
+    std::string home;
+    if (const char* h = std::getenv("HOME")) home = h;
+    if (!home.empty() && !extracted_app_dir_.empty()) {
+        abi_db_.load(home + "/.cache/macrun/manifests/electron-abi-map.json");
+        native_registry_.load(home + "/.cache/macrun/manifests/native-registry.json");
+        scan_and_plan_native_modules();
+
+        if (native_plan_.requires_provisioning) {
+            log("WARN", "Native module provisioning missing or failed. Falling back to dynamic JavaScript Proxy stubs.");
+            record_degradation("shimmed", "degraded", "native_module_compilation_failed",
+                               "Native module compilation failed or missing; falling back to JavaScript Proxy stubs.");
+            
+            for (auto& entry : native_plan_.entries) {
+                if (entry.action == platform::native::SubstitutionAction::PROVISION_NEEDED) {
+                    entry.action = platform::native::SubstitutionAction::STUB;
+                    entry.risk_class = platform::native::NativeModuleRiskClass::REGISTRY_STUBBED;
+                }
+            }
+            native_plan_.requires_provisioning = false;
+        }
+
+        if (!stage_native_substitutions()) {
+            log("FATAL", "Native module staging failed");
+            status_ = AdapterStatus::Error;
+            return false;
+        }
+    }
+
+    // Legacy detect_native_modules (delegates to engine for scanning,
+    // handles MACRUN_ALLOW_DARWIN_NATIVE bypass path)
     if (!detect_native_modules(app_dir)) {
         detail_ = "Darwin-native .node modules detected — cannot run on Linux.";
         status_ = AdapterStatus::Error;

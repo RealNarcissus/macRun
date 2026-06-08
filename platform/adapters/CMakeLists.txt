@@ -9,4 +9,4 @@ add_library(platform_adapters STATIC
 )
 
 target_include_directories(platform_adapters PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(platform_adapters PUBLIC platform_common)
+target_link_libraries(platform_adapters PUBLIC platform_common platform_native compatdb)

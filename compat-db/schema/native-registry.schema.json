@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://macos-runtime-platform/compat-db/native-registry.schema.json",
+  "title": "Native Module Replacement Registry",
+  "description": "Schema for the governed native module replacement registry. Defines which .node native modules may be compiled from source, which must be stubbed, and the governed build parameters for each.",
+  "type": "object",
+  "required": ["schema_version", "entries"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "architecture_reference": {
+      "type": "string"
+    },
+    "entries": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z0-9@._/-]+$": { "$ref": "#/$defs/registry_entry" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "registry_entry": {
+      "type": "object",
+      "required": ["module_name", "stub_policy", "common_role", "governed_versions"],
+      "properties": {
+        "module_name": {
+          "type": "string",
+          "description": "npm package name of the native module"
+        },
+        "description": {
+          "type": "string"
+        },
+        "stub_policy": {
+          "type": "string",
+          "enum": ["never_stub", "stub_if_uncached", "always_stub"],
+          "description": "When to use dlopen Proxy stubs instead of compilation. never_stub = must compile (critical modules). always_stub = never compile (cosmetic modules). stub_if_uncached = compile if possible, stub as fallback."
+        },
+        "common_role": {
+          "type": "string",
+          "enum": ["state-database", "crypto", "rendering", "network", "serialization", "system-binding", "unknown"],
+          "description": "Architectural role of the native module"
+        },
+        "governed_versions": {
+          "type": "object",
+          "patternProperties": {
+            "^\\d+\\.\\d+\\.\\d+$": { "$ref": "#/$defs/version_entry" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "version_entry": {
+      "type": "object",
+      "required": ["npm_version", "sha256", "electron_abi"],
+      "properties": {
+        "npm_version": {
+          "type": "string",
+          "description": "npm package version (e.g. 9.6.0)"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA256 of the npm tarball for integrity verification. Empty string = not yet pinned."
+        },
+        "electron_abi": { "$ref": "#/$defs/abi_requirement" },
+        "build_flags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Additional flags passed to node-gyp rebuild"
+        },
+        "build_env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Environment variables set during build"
+        },
+        "known_good": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this version has been verified to compile and run successfully"
+        },
+        "validated_on": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/distro_entry" },
+          "description": "Linux distributions this version has been validated on"
+        }
+      },
+      "additionalProperties": false
+    },
+    "abi_requirement": {
+      "type": "object",
+      "required": ["node_module_version"],
+      "properties": {
+        "node_module_version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "NODE_MODULE_VERSION the binary targets"
+        },
+        "electron_versions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Electron major versions this ABI corresponds to (e.g. [\"42\", \"41\"])"
+        }
+      },
+      "additionalProperties": false
+    },
+    "distro_entry": {
+      "type": "object",
+      "required": ["distribution", "version", "arch"],
+      "properties": {
+        "distribution": { "type": "string" },
+        "version": { "type": "string" },
+        "arch": { "enum": ["x86_64", "aarch64"] }
+      },
+      "additionalProperties": false
+    }
+  }
+}

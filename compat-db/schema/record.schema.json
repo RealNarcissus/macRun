@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://macos-runtime-platform/compat-db/record.schema.json",
   "title": "Compatibility Database Record",
-  "description": "Schema for compatibility records in the macOS Runtime Platform compatibility database. Modeled after ProtonDB and Wine AppDB. Architecture reference: docs/architecture/ARCHITECTURE_V6.md — Compatibility Database section.",
+  "description": "Schema v1.1.0 for compatibility records in the macOS Runtime Platform compatibility database. Modeled after ProtonDB and Wine AppDB. Architecture reference: docs/architecture/ARCHITECTURE_V6.md — Compatibility Database section.",
   "type": "object",
   "required": [
     "schema_version",
@@ -223,6 +223,64 @@
         "experimental_features": {
           "type": "array",
           "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "architecture_class": {
+      "type": "string",
+      "enum": ["class_a", "class_b", "class_c", "class_d"],
+      "description": "Application architecture class per COMPATIBILITY_SPECTRUM.md. Class A: self-contained. Class B: API drift. Class C: native modules. Class D: client-server."
+    },
+    "critical_native_modules": {
+      "type": "array",
+      "description": "Native .node modules that are architecturally critical and cannot be stubbed.",
+      "items": {
+        "type": "object",
+        "required": ["module", "role"],
+        "properties": {
+          "module": { "type": "string", "description": "npm module name (e.g. better-sqlite3)" },
+          "role": { "type": "string", "description": "Architectural role (e.g. state-database, pty-subsystem, logger)" },
+          "requires_compilation": { "type": "boolean", "description": "Whether a Linux-native recompilation is required" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "external_processes": {
+      "type": "array",
+      "description": "External backend binaries the app communicates with. Defines Class D applications.",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "binary_type"],
+        "properties": {
+          "name": { "type": "string", "description": "Process/executable name" },
+          "type": { "type": "string", "description": "Role classification (e.g. backend-server, plugin-host, sidecar, language-server)" },
+          "protocol": { "type": "string", "description": "IPC protocol (e.g. stdio-mcp, http, grpc, unix-socket)" },
+          "binary_type": { "type": "string", "description": "Bundled binary platform (e.g. mach-o-arm64, mach-o-x86_64)" },
+          "substitution_env": { "type": "string", "description": "Environment variable used for Linux-native replacement binary path" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "runtime_policy": {
+      "type": "object",
+      "description": "Runtime version preferences for substrate negotiation per RUNTIME_NEGOTIATION.md.",
+      "properties": {
+        "preferred": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Preferred Electron versions in descending priority order"
+        },
+        "minimum": { "type": "string", "description": "Minimum acceptable Electron version" },
+        "validated": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Electron versions validated against this application"
+        },
+        "fallback": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Fallback Electron versions if preferred unavailable"
         }
       },
       "additionalProperties": false

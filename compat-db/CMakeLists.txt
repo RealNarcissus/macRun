@@ -7,6 +7,7 @@
 add_library(compatdb STATIC
     src/validator.cpp
     src/database.cpp
+    src/native_registry.cpp
 )
 
 target_include_directories(compatdb PUBLIC include)

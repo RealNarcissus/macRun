@@ -119,9 +119,7 @@ static std::string detect_electron_version(const std::string& app_bundle_path) {
 
                     if (bundle_id == "com.github.Electron.Framework" ||
                         fw_name == "Electron Framework.framework" ||
-                        bundle_id.find("electron") != std::string::npos ||
-                        fw_name.find("Electron") != std::string::npos ||
-                        bundle_id.find(".framework") != std::string::npos) {
+                        fw_name.find(" Framework.framework") != std::string::npos) {
                         if (!version.empty()) {
                             return version;
                         }

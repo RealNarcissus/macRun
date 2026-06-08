@@ -11,6 +11,11 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+namespace macrun {
+    struct ProvisionOptions { bool force = false; bool verbose = false; };
+    int provision_command(const std::string& app_path, const ProvisionOptions& opts);
+}
+
 static void print_usage(const char* prog) {
     std::cerr << "Usage: " << prog << " [options] <application_path>\n\n";
     std::cerr << "Orchestrates macOS application launch through the platform's execution pipeline.\n\n";
@@ -50,6 +55,23 @@ int main(int argc, char* argv[]) {
     bool do_launch = false;
     bool do_wait = false;
     std::string app_path;
+
+    // Check for 'provision' subcommand before normal flag parsing
+    if (argc >= 2 && std::string_view(argv[1]) == "provision") {
+        macrun::ProvisionOptions opts;
+        std::string prov_path;
+        for (int i = 2; i < argc; i++) {
+            std::string_view arg(argv[i]);
+            if (arg == "--force") opts.force = true;
+            else if (arg == "--verbose") opts.verbose = true;
+            else prov_path = argv[i];
+        }
+        if (prov_path.empty()) {
+            std::cerr << "Usage: " << argv[0] << " provision [--force] [--verbose] <app_path>\n";
+            return 1;
+        }
+        return macrun::provision_command(prov_path, opts);
+    }
 
     for (int i = 1; i < argc; i++) {
         std::string_view arg(argv[i]);

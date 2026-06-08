@@ -7,6 +7,8 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+
 option(BUILD_TESTS "Build test suite" ON)
 option(BUILD_TOOLING "Build development tooling" ON)
 option(ENABLE_VM_SUPPORT "Build VM-assisted execution subsystem" ON)

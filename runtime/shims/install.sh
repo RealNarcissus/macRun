@@ -28,6 +28,7 @@ SHIM_FILES=(
     "clipboard-bridge.js"
     "shell-integration.js"
     "electron-normalization-registry.js"
+    "native-module-loader.js"
     "renderer-diag.js"
     "main-diag.js"
     "esm-loader.mjs"
