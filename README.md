@@ -84,13 +84,13 @@ handling platform differences transparently.
 
 - **Claude Desktop** running on Linux (Electron 42 Substrate):
 
-![Claude Desktop on Linux](docs/guides/claude/images/claude_linux.png)
+![Claude Desktop on Linux](docs/guides/claude%20desktop/images/claude_linux.png)
 
 - **Codex Desktop** running on Linux (EndeavourOS / Wayland):
 
-![Codex Desktop on Linux](docs/guides/codex/images/codex_linux.png)
+![Codex Desktop on Linux](docs/guides/codex%20desktop/images/codex_linux.png)
 
-For detailed guides on setup, native module building, and launching, see the [Claude Desktop Launch Guide](docs/guides/claude/README.md) and the [Codex Desktop Launch Guide](docs/guides/codex/README.md).
+For detailed guides on setup, native module building, and launching, see the [Claude Desktop Launch Guide](docs/guides/claude%20desktop/README.md) and the [Codex Desktop Launch Guide](docs/guides/codex%20desktop/README.md).
 
 ### Architecture Stress Tests (official Linux builds exist)
 

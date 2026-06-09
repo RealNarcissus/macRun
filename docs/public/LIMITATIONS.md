@@ -44,7 +44,7 @@ original unmodified macOS app bundles.
   desktop notifications
 - **Degradation**: Auto-updater stubbed; credential storage bridged to `libsecret`
 - **Required Flags**: `MACRUN_ALLOW_DARWIN_NATIVE=1`
-- **Guide**: [docs/guides/claude/README.md](../guides/claude/README.md)
+- **Guide**: [docs/guides/claude/README.md](../guides/claude%20desktop/README.md)
 
 #### Codex Desktop — Class D: Client-Server
 - **Status**: Functional
@@ -56,7 +56,7 @@ original unmodified macOS app bundles.
 - **Required Steps**: Linux-native `better-sqlite3` compilation; `CODEX_CLI_PATH`
   backend substitution
 - **Required Flags**: `MACRUN_ALLOW_DARWIN_NATIVE=1`, `CODEX_CLI_PATH=/path/to/codex`
-- **Guide**: [docs/guides/codex/README.md](../guides/codex/README.md)
+- **Guide**: [docs/guides/codex/README.md](../guides/codex%20desktop/README.md)
 
 #### DeepSeek GUI — Class C: IDE-Class
 - **Status**: Functional
@@ -65,7 +65,7 @@ original unmodified macOS app bundles.
 - **Working**: Main application window rendering, local agent runtime (`kun`), database initialization
 - **Required Steps**: Copy or recompile Linux-native `better-sqlite3` module
 - **Required Flags**: `MACRUN_ELECTRON_VERSION=42.3.3`, `MACRUN_ALLOW_DARWIN_NATIVE=1`
-- **Guide**: [docs/guides/deepseek/README.md](../guides/deepseek/README.md)
+- **Guide**: [docs/guides/deepseek/README.md](../guides/deepseek%20GUI/README.md)
 
 ### Architecture Stress Tests (official Linux builds exist)
 

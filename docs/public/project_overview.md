@@ -151,7 +151,7 @@ tests/                    Unit, integration, compatibility, and performance test
 | [docs/architecture/COMPATIBILITY_SPECTRUM.md](../architecture/COMPATIBILITY_SPECTRUM.md) | Current | Class A–D application classification model |
 | [docs/architecture/RUNTIME_NEGOTIATION.md](../architecture/RUNTIME_NEGOTIATION.md) | Current | Substrate version selection governance |
 | [docs/architecture/DEGRADATION_MODEL.md](../architecture/DEGRADATION_MODEL.md) | Current | Degradation categories and escalation logic |
-| [docs/guides/codex/README.md](../guides/codex/README.md) | Current | Step-by-step guide: Codex Desktop on Linux |
+| [docs/guides/codex desktop/README.md](../guides/codex%20desktop/README.md) | Current | Step-by-step guide: Codex Desktop on Linux |
 
 ---
 
