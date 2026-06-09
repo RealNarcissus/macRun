@@ -46,3 +46,6 @@ compat-db/reports/local/
 
 # Agent command files
 .commandcode/
+
+# Local scratch files and extraction targets
+scratch/

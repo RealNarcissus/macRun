@@ -24,6 +24,7 @@ struct GovernedVersion {
     std::vector<KnownBadEntry> known_bad_on;
     std::string shim_type;
     std::map<std::string, std::string> dependencies;
+    std::string npm_package;
 };
 
 class NativeRegistry {

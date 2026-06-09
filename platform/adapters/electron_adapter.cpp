@@ -58,6 +58,27 @@ bool ElectronAdapter::initialize() {
         return false;
     }
 
+    // Load compat-db reports to resolve version overrides
+    std::string home;
+    if (const char* h = std::getenv("HOME")) home = h;
+    if (!home.empty()) {
+        std::string reports_dir = home + "/.cache/macrun/reports";
+        struct stat st;
+        if (stat(reports_dir.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+            compatdb_.load_directory(reports_dir);
+            auto records = compatdb_.lookup_by_bundle_id(bundle_id_);
+            if (!records.empty()) {
+                for (const auto& pair : records[0].record.required_flags) {
+                    if (pair.first == "MACRUN_ELECTRON_VERSION") {
+                        resolved_version_ = pair.second;
+                        log("INFO", "Applying compat-db substrate target version override: " + resolved_version_);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     status_ = AdapterStatus::Ready;
     log("INFO", "Electron native replacement environment ready");
     return true;
@@ -749,6 +770,13 @@ bool ElectronAdapter::stage_native_substitutions() {
             }
             staged_substitution_map_[entry.module_name] = dest;
             log("INFO", "Staged cached native module: " + entry.module_name + " → " + dest);
+        } else if (entry.action == platform::native::SubstitutionAction::STUB) {
+            std::string dest = entry.dest_path;
+            std::error_code ec;
+            if (fs::exists(dest, ec)) {
+                fs::remove(dest, ec);
+                log("INFO", "Removed stubbed native module to prevent scan detection: " + entry.module_name + " → " + dest);
+            }
         }
     }
 
@@ -922,6 +950,71 @@ std::vector<std::string> ElectronAdapter::build_child_environment() {
         }
     }
 
+    // Auto-discover external process replacements from compatdb_
+    auto records = compatdb_.lookup_by_bundle_id(bundle_id_);
+    if (!records.empty()) {
+        for (const auto& ep : records[0].record.external_processes) {
+            if (!ep.substitution_env.empty()) {
+                // If already set in parent environment, preserve it
+                if (std::getenv(ep.substitution_env.c_str())) {
+                    continue;
+                }
+
+                // Solve binary search name: strip "-cli" or "-server" suffixes
+                std::string search_name = ep.name;
+                if (search_name.size() > 4 && search_name.substr(search_name.size() - 4) == "-cli") {
+                    search_name = search_name.substr(0, search_name.size() - 4);
+                } else if (search_name.size() > 7 && search_name.substr(search_name.size() - 7) == "-server") {
+                    search_name = search_name.substr(0, search_name.size() - 7);
+                }
+
+                // Check host search paths for this binary
+                std::vector<std::string> search_dirs;
+                if (!home.empty()) {
+                    search_dirs.push_back(home + "/.local/bin");
+                    search_dirs.push_back(home + "/bin");
+                }
+                
+                // Add directories from PATH
+                if (const char* path_env = std::getenv("PATH")) {
+                    std::stringstream ss(path_env);
+                    std::string dir;
+                    while (std::getline(ss, dir, ':')) {
+                        if (!dir.empty()) {
+                            search_dirs.push_back(dir);
+                        }
+                    }
+                }
+                
+                search_dirs.push_back("/usr/local/bin");
+                search_dirs.push_back("/usr/bin");
+                search_dirs.push_back("/bin");
+
+                std::string resolved_path;
+                for (const auto& dir : search_dirs) {
+                    fs::path p = fs::path(dir) / search_name;
+                    std::error_code sec;
+                    if (fs::exists(p, sec) && !fs::is_directory(p, sec)) {
+                        struct stat st;
+                        if (stat(p.c_str(), &st) == 0 && (st.st_mode & S_IXUSR)) {
+                            resolved_path = p.string();
+                            break;
+                        }
+                    }
+                }
+
+                if (!resolved_path.empty()) {
+                    overrides.push_back(ep.substitution_env + "=" + resolved_path);
+                    log("INFO", "Auto-discovered and injected external process substitution: " + 
+                               ep.substitution_env + "=" + resolved_path);
+                } else {
+                    log("WARN", "Could not locate Linux-native replacement for " + ep.name + 
+                               " (search binary: " + search_name + ")");
+                }
+            }
+        }
+    }
+
     return overrides;
 }
 
@@ -997,6 +1090,15 @@ bool ElectronAdapter::execute() {
         std::ofstream shim_file(boot_shim_path);
         if (shim_file) {
             shim_file << "if (typeof process !== 'undefined') {\n"
+                      << "  process.on('uncaughtException', (err) => {\n"
+                      << "    if (err && (err.code === 'EPIPE' || err.code === 'EIO' || (err.message && (err.message.includes('EPIPE') || err.message.includes('EIO'))))) {\n"
+                      << "      return;\n"
+                      << "    }\n"
+                      << "    if (process.listenerCount('uncaughtException') <= 1) {\n"
+                      << "      console.error(err);\n"
+                      << "      process.exit(1);\n"
+                      << "    }\n"
+                      << "  });\n"
                       << "  if (process.stdout) {\n"
                       << "    process.stdout.on('error', () => {});\n"
                       << "    const origWrite = process.stdout.write;\n"

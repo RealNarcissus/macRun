@@ -176,7 +176,7 @@ int provision_command(const std::string& app_path, const ProvisionOptions& opts)
         std::cout << "  Building: " << mod.module_name << " (npm@" << replacement->npm_version << ")\n";
 
         platform::native::BuildSpec spec;
-        spec.module_name = mod.module_name;
+        spec.module_name = replacement->npm_package.empty() ? mod.module_name : replacement->npm_package;
         spec.npm_version = replacement->npm_version;
         spec.sha256 = replacement->sha256;
         spec.build_flags = replacement->build_flags;

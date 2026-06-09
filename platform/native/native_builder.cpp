@@ -137,8 +137,14 @@ BuildResult build_in_sandbox(const BuildSpec& spec, const std::string& output_di
 
     // NPM tarball path
     std::string tarball_path = build_dir + "/package.tgz";
-    std::string npm_url = "https://registry.npmjs.org/" + spec.module_name +
-                          "/-/" + spec.module_name + "-" + spec.npm_version + ".tgz";
+    std::string npm_package = spec.module_name;
+    std::string package_name_only = npm_package;
+    size_t slash_pos = npm_package.find('/');
+    if (slash_pos != std::string::npos) {
+        package_name_only = npm_package.substr(slash_pos + 1);
+    }
+    std::string npm_url = "https://registry.npmjs.org/" + npm_package +
+                          "/-/" + package_name_only + "-" + spec.npm_version + ".tgz";
 
     if (!download_file(npm_url, tarball_path, spec.sha256)) {
         result.success = false;
@@ -511,6 +517,18 @@ BuildResult build_in_sandbox(const BuildSpec& spec, const std::string& output_di
                 if (filename.find("test") != std::string::npos) {
                     continue;
                 }
+                
+                // Verify that it is a valid ELF file (first 4 bytes must be 0x7F, 0x45, 0x4C, 0x46)
+                std::ifstream f(entry.path(), std::ios::binary);
+                char magic[4] = {0};
+                if (f.read(magic, 4)) {
+                    if (magic[0] != 0x7F || magic[1] != 0x45 || magic[2] != 0x4C || magic[3] != 0x46) {
+                        continue; // Not a valid Linux ELF binary
+                    }
+                } else {
+                    continue;
+                }
+                
                 uint64_t size = entry.file_size(ec);
                 if (size > max_size) {
                     max_size = size;
@@ -524,8 +542,15 @@ BuildResult build_in_sandbox(const BuildSpec& spec, const std::string& output_di
         } else {
             for (const auto& entry : fs::recursive_directory_iterator(build_dir, ec)) {
                 if (entry.is_regular_file() && entry.path().extension() == ".node") {
-                    result.binary_path = entry.path().string();
-                    break;
+                    // Verify ELF magic even in fallback
+                    std::ifstream f(entry.path(), std::ios::binary);
+                    char magic[4] = {0};
+                    if (f.read(magic, 4)) {
+                        if (magic[0] == 0x7F && magic[1] == 0x45 && magic[2] == 0x4C && magic[3] == 0x46) {
+                            result.binary_path = entry.path().string();
+                            break;
+                        }
+                    }
                 }
             }
         }

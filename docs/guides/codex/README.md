@@ -4,7 +4,7 @@ This guide details the step-by-step process to execute the modern macOS **Codex 
 
 Codex Desktop is a **Class D: Client-Server** application: it features an Electron front-end shell that communicates via a stdio-based Model Context Protocol (MCP) pipe with a bundled macOS command-line backend app-server (`codex`). It also relies on a local SQLite database module (`better-sqlite3`) to manage configuration, local projects, and user session states.
 
-By following this guide, you will compile the required Linux-native SQLite module, substitute the macOS backend helper with its Linux-native equivalent, and execute the app with correct window/theme layouts and zero-glitch solid backgrounds.
+By following this guide, you will compile the required Linux-native SQLite module, rely on the automated path discovery and safety bypassing of macRun, and execute the app cleanly with correct window/theme layouts and zero-glitch solid backgrounds.
 
 ---
 
@@ -28,12 +28,12 @@ cmake --build build
 # 2. Deploy the core integration shims into the runtime cache (~/.cache/macrun/shims)
 ./runtime/shims/install.sh
 
-# 3. Cache the negotiated Electron 42.3.3 substrate
-./runtime/third_party/electron/acquire.sh --all
+# 3. Cache the negotiated Electron 28.3.3 substrate
+./runtime/third_party/electron/acquire.sh 28.3.3
 ```
 
 > [!NOTE]
-> macRun dynamically inspects the Codex bundle framework metadata and negotiates the closest matching runtime version. It automatically resolves that Codex was built against **Electron 42.1.0** and targets the cached host environment's **Electron 42.3.3** binary for execution.
+> macRun dynamically inspects the Codex bundle framework metadata and negotiates the closest matching runtime version. It automatically resolves that Codex targets **Electron 28.3.3** using the `compat-db` Bundle ID metadata, automatically selecting the correct cached host substrate binary.
 
 ---
 
@@ -42,100 +42,61 @@ cmake --build build
 If you have downloaded the macOS installer (`.dmg`), extract the `.app` bundle using `7z`:
 
 ```bash
-# Extract the bundle into a temporary workspace
-7z x "/path/to/Codex Installer.dmg" -o"/tmp/codex-run/"
+# Extract the bundle into a standard folder
+7z x "/path/to/Codex.dmg" -o"/home/charleton/Downloads/TestApps/clean_slate/Codex/"
 ```
-This will yield the folder `/tmp/codex-run/Codex Installer/Codex.app`.
+This will yield the folder `/home/charleton/Downloads/TestApps/clean_slate/Codex/Codex Installer/Codex.app`.
 
 ---
 
 ## Step 3: Resolve the Linux-Native CLI App-Server
 
-The bundled CLI app-server inside the macOS bundle (`Contents/Resources/app.asar.unpacked/bin/codex`) is a Mach-O ARM64/x86_64 binary. Linux cannot execute it directly. We must substitute it with a Linux-native ELF version.
+### Rationale: Why is the CLI App-Server Required?
+Codex is a Class D (Client-Server) application consisting of an Electron frontend and a background CLI app-server (`codex`) that communicates via a stdio MCP pipe. 
+The bundled CLI binary in the macOS bundle (`Contents/Resources/app.asar.unpacked/bin/codex`) is a macOS-compiled Mach-O binary. If you attempt to execute it on Linux, it will fail with a `cannot execute binary file` error.
 
-You can install the official Linux-native npm package globally to get the compiled CLI binary:
+To solve this, a compatible Linux-native CLI replacement is run on the host. By installing the official npm package globally, the Linux-native `codex` executable is created in your local bin directory:
 
 ```bash
-# Install the Codex NPM module containing the Linux-native CLI
+# Install the Codex NPM module globally
 npm install -g @openai/codex
 ```
 
-This installs the Linux-native Rust app-server CLI on your system. Note down the path to this executable. Usually, it is installed at:
+This installs the Linux-native CLI on your host. Normally, it is placed at:
 `~/.local/bin/codex`
-or:
-`~/.local/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex`
 
 ---
 
-## Step 4: Compile & Substitute the Linux-Native SQLite Module
+## Step 4: Automate Native Module Provisioning
 
-Because Codex uses `better-sqlite3` for local storage, the macOS `.node` compiled binary in the app bundle will crash on Linux due to ABI and platform mismatches. Furthermore, because Electron 42 uses V8 v13+ (which enforces strict V8 Sandbox rules), you must compile a patched version of `better-sqlite3@12.9.0` for Electron 42.3.3.
+Rather than manually downloading, patching, and copying native `.node` modules like `better-sqlite3`, you can leverage macRun's automated provisioning pipeline. 
 
-### 1. Set Up a Build Directory
-```bash
-mkdir -p /tmp/build-sqlite
-cd /tmp/build-sqlite
-npm init -y
-npm install better-sqlite3@12.9.0
-```
-
-### 2. Apply V8 v13+ Compatibility Patches
-Open the following source files inside `/tmp/build-sqlite/node_modules/better-sqlite3/` and apply the compatibility edits:
-
-#### File A: `src/util/macros.cpp` (Line 30)
-Find the `OnlyAddon` definition and update it to pass the pointer tag under V8 13:
-```cpp
-#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >= 13
-#define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value(v8::kExternalPointerTypeTagDefault))
-#else
-#define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
-#endif
-```
-
-#### File B: `src/better_sqlite3.cpp` (Line 60)
-Find `v8::External::New` and update it to provide the pointer tag under V8 13:
-```cpp
-#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >= 13
-v8::Local<v8::External> data = v8::External::New(isolate, addon, v8::kExternalPointerTypeTagDefault);
-#else
-v8::Local<v8::External> data = v8::External::New(isolate, addon);
-#endif
-```
-
-#### File C: `src/util/helpers.cpp`
-To resolve compiler template argument ambiguity, ensure that `nullptr` is passed instead of `0` to the `SetNativeDataProperty` method.
-
-### 3. Compile targeting Electron v42.3.3
-```bash
-npx -y @electron/rebuild --version 42.3.3
-```
-
-### 4. Swap the Binary in the Codex Bundle
-Copy the newly compiled native `.node` file to overwrite the macOS-native ones inside the extracted Codex workspace:
+Run the `provision` command pointing to the extracted bundle:
 
 ```bash
-# Overwrite the unpacked asar module binary
-cp /tmp/build-sqlite/node_modules/better-sqlite3/build/Release/better_sqlite3.node \
-  "/tmp/codex-run/Codex Installer/Codex.app/Contents/Resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+# Provision native modules automatically
+./build/tooling/macrun-cli/macrun-cli provision --verbose "/home/charleton/Downloads/TestApps/clean_slate/Codex/Codex Installer/Codex.app"
 ```
+
+### What Happens Behind the Scenes:
+1. macRun scans the bundle's ASAR archives for native `.node` modules.
+2. It detects that `better-sqlite3` and `node-pty` are required.
+3. It checks its manifests for compatibility overrides, applies source patches for modern V8 sandbox compatibility, and compiles the modules from source inside a secure Bubblewrap sandbox.
+4. The compiled Linux-native ELF `.node` binaries are stored in the local cache (`~/.cache/macrun/native/`) and staged automatically when launching.
 
 ---
 
 ## Step 5: Launch Codex Desktop
 
-Execute the `macrun-cli` binary pointing to the extracted `.app` package and specifying the Linux-native CLI path:
+Execute the launch command without *any* manual environment overrides:
 
 ```bash
-# Set CODEX_CLI_PATH to your local Linux ELF binary and execute
-CODEX_CLI_PATH="/home/charleton/.local/bin/codex" \
-MACRUN_ALLOW_DARWIN_NATIVE=1 \
-MACRUN_DIAG_RENDERER=1 MACRUN_DIAG_MAIN=1 \
-./build/tooling/macrun-cli/macrun-cli --launch "/tmp/codex-run/Codex Installer/Codex.app"
+# Execute the launcher directly
+./build/tooling/macrun-cli/macrun-cli --launch "/home/charleton/Downloads/TestApps/clean_slate/Codex/Codex Installer/Codex.app"
 ```
 
 > [!TIP]
-> **What's Happening Behind the Scenes**:
-> * `macrun-cli` unpacks the assets, injects the `boot-shim.js` at startup, and fires the Electron v42 runtime.
-> * The shims intercept calls to `BrowserWindow`, `WebContentsView`, and `BrowserView` prototypes, redirecting runtime transparency changes (`#00000000`) and macOS vibrancy settings to solid colors matching your system's active light/dark theme.
-> * The Rust backend launches via the MCP stdio pipe, connecting the UI.
-> * The newly built `better-sqlite3.node` loads successfully, allowing database actions to hydrate without warnings.
+> * **Automatic CLI Discovery**: macRun automatically scans standard local directories (`~/.local/bin`, `~/bin`, etc.) and system `PATH` directories to find the native `codex` CLI binary and injects the `CODEX_CLI_PATH` environment variable automatically.
+> * **Automatic Safety Bypass**: The launcher detects macOS-only native modules and automatically removes them from staging directories. This bypasses safety checks without requiring manual flags (such as `MACRUN_ALLOW_DARWIN_NATIVE=1`).
+> * **Substrate Override**: The target Electron version `28.3.3` is loaded from `compat-db` reports and resolved automatically.
+> * **Background Styling**: The shims automatically intercept calls to `BrowserWindow` and vibrancy modules to render solid backgrounds matching your host's dark/light color scheme.

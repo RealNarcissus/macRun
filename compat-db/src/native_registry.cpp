@@ -105,6 +105,7 @@ bool NativeRegistry::load(const std::string& registry_path) {
                         gver.dependencies[dk] = dv.is_string() ? dv.get<std::string>() : "";
                     }
                 }
+                gver.npm_package = ver_val.value("npm_package", module_name);
 
                 if (!gver.npm_version.empty()) {
                     versions.push_back(std::move(gver));
@@ -188,6 +189,7 @@ std::optional<NativeReplacementRecord> NativeRegistry::find_replacement(
                 rec.known_bad_on = gv.known_bad_on;
                 rec.shim_type = gv.shim_type;
                 rec.dependencies = gv.dependencies;
+                rec.npm_package = gv.npm_package;
                 return rec;
             }
         }
@@ -235,6 +237,7 @@ std::optional<NativeReplacementRecord> NativeRegistry::find_replacement(
         rec.known_bad_on = best_gv->known_bad_on;
         rec.shim_type = best_gv->shim_type;
         rec.dependencies = best_gv->dependencies;
+        rec.npm_package = best_gv->npm_package;
         return rec;
     }
 

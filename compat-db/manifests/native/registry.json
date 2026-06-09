@@ -21,6 +21,17 @@
           "known_bad_on": [],
           "validated_on": []
         },
+        "12.10.0-electron28": {
+          "npm_version": "12.10.0",
+          "sha256": "",
+          "electron_abi": { "node_module_version": 118, "electron_versions": ["28"] },
+          "build_flags": [],
+          "build_env": {},
+          "known_good": true,
+          "patches": [],
+          "known_bad_on": [],
+          "validated_on": []
+        },
         "9.6.0": {
           "npm_version": "9.6.0",
           "sha256": "",
@@ -62,6 +73,30 @@
           "build_env": {},
           "dependencies": {
             "node-addon-api": "7.1.1"
+          },
+          "known_good": true,
+          "patches": [],
+          "known_bad_on": [],
+          "validated_on": []
+        }
+      }
+    },
+    "sqlite3": {
+      "module_name": "sqlite3",
+      "description": "sqlite3 binding — used by VS Code / Cursor state database.",
+      "stub_policy": "never_stub",
+      "common_role": "state-database",
+      "governed_versions": {
+        "5.1.8-vscode": {
+          "npm_package": "@vscode/sqlite3",
+          "npm_version": "5.1.8-vscode",
+          "sha256": "",
+          "electron_abi": { "node_module_version": 118, "electron_versions": ["28"] },
+          "build_flags": [],
+          "build_env": {},
+          "dependencies": {
+            "node-addon-api": "7.1.1",
+            "tar": "6.2.0"
           },
           "known_good": true,
           "patches": [],

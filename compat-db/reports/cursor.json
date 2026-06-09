@@ -23,6 +23,18 @@
   ],
   "known_issues": [],
   "workarounds": [],
+  "critical_native_modules": [
+    {
+      "module": "sqlite3",
+      "role": "state-database",
+      "requires_compilation": true
+    },
+    {
+      "module": "node-pty",
+      "role": "terminal-pty",
+      "requires_compilation": true
+    }
+  ],
   "required_flags": {},
   "tags": ["electron", "ai-tool", "editor", "phase-1"],
   "notes": "Runs natively via Electron runtime substitution (Tier 0). Settings persist correctly. Clipboard and Wayland integration functional. No VM required."
